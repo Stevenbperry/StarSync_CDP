@@ -27,8 +27,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define BMA456_ADDR 0x18 << 1
-#define MAX_DEL 1000
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -43,7 +42,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
-I2C_HandleTypeDef hi2c3;
 
 I2S_HandleTypeDef hi2s2;
 I2S_HandleTypeDef hi2s3;
@@ -51,7 +49,8 @@ I2S_HandleTypeDef hi2s3;
 SPI_HandleTypeDef hspi1;
 
 /* USER CODE BEGIN PV */
-int16_t accelX, accelY, accelZ;	// accelerometer values
+float accelX, accelY, accelZ;	// accelerometer values
+uint8_t error_flag, drdy; // any error that the accelerometer might throw
 
 /* USER CODE END PV */
 
@@ -63,7 +62,6 @@ static void MX_I2C1_Init(void);
 static void MX_I2S2_Init(void);
 static void MX_I2S3_Init(void);
 static void MX_SPI1_Init(void);
-static void MX_I2C3_Init(void);
 void MX_USB_HOST_Process(void);
 
 /* USER CODE BEGIN PFP */
@@ -92,6 +90,8 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
+  int16_t accelx, accely, accelz;
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -111,10 +111,9 @@ int main(void)
   MX_I2S3_Init();
   MX_SPI1_Init();
   MX_USB_HOST_Init();
-  MX_I2C3_Init();
   /* USER CODE BEGIN 2 */
 
-  BMA456_Startup();
+  BMA456_Startup(hi2c1);	// initializes the BMA456 accelerometer
 
   /* USER CODE END 2 */
 
@@ -122,8 +121,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  BMA456_ReadAccelData(&accelX, &accelY, &accelZ);
-	  HAL_Delay(500);
+	  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
+	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
+	  // error_flag should be 0 under nominal operations
+
+	  accelX = ((float) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
+	  accelY = ((float) accely / BMA456_FSR) * 9.80556;
+	  accelZ = ((float) accelz / BMA456_FSR) * 9.80556;
+
+	  HAL_Delay(500);	// 0.5 second delay between reads
 
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
@@ -229,40 +235,6 @@ static void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
-
-}
-
-/**
-  * @brief I2C3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C3_Init(void)
-{
-
-  /* USER CODE BEGIN I2C3_Init 0 */
-
-  /* USER CODE END I2C3_Init 0 */
-
-  /* USER CODE BEGIN I2C3_Init 1 */
-
-  /* USER CODE END I2C3_Init 1 */
-  hi2c3.Instance = I2C3;
-  hi2c3.Init.ClockSpeed = 100000;
-  hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c3.Init.OwnAddress1 = 0;
-  hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c3.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c3.Init.OwnAddress2 = 0;
-  hi2c3.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c3.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2C3_Init 2 */
-
-  /* USER CODE END I2C3_Init 2 */
 
 }
 
@@ -453,46 +425,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-void BMA456_Startup(){
-	/* Starts up the accelerometer */
-	BMA456_Write(0x40, 0x17);
-	BMA456_Write(0x7D, 0x04);
-	BMA456_Write(0x7C, 0x03);
-
-}
-
-// Read accelerometer data
-void BMA456_ReadAccelData(int16_t* accelX, int16_t* accelY, int16_t* accelZ) {
-    uint8_t data[6] = {0};
-    if(BMA456_Read(0x12, data, sizeof(data)) == HAL_OK) {
-        // Convert the data to 16-bit integers
-        *accelX = (int16_t)(data[0] | data[1] << 8);
-        *accelY = (int16_t)(data[2] | data[3] << 8);
-        *accelZ = (int16_t)(data[4] | data[5] << 8);
-    }
-}
-
-
-/* reg - register address | data - data to be sent to that register */
-
-void BMA456_Write(uint8_t reg, uint8_t data) {
-	uint8_t buf[2] = {reg, data};
-    HAL_I2C_Master_Transmit(&hi2c3, BMA456_ADDR, (uint8_t*) &buf, 2, MAX_DEL);
-}
-
-/* Reg - register address | bytes - # of bytes register is expected to return */
-
-HAL_StatusTypeDef BMA456_Read(uint8_t reg, uint8_t* data, uint8_t bytes) {
-	HAL_StatusTypeDef result;
-    result = HAL_I2C_Master_Transmit(&hi2c1, BMA456_ADDR, &reg, 1, MAX_DEL);
-    if(result != HAL_OK) {
-    	return result;
-    }
-    result = HAL_I2C_Master_Receive(&hi2c1, BMA456_ADDR, data, bytes, MAX_DEL);
-
-    return result;
-}
 
 /* USER CODE END 4 */
 
