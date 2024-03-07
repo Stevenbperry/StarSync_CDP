@@ -57,7 +57,6 @@ void BMA456_Write(uint8_t, uint8_t);
 HAL_StatusTypeDef BMA456_Read(uint8_t, uint8_t*, uint8_t);
 void BMA456_ReadAccelData(int16_t*, int16_t*, int16_t*);
 void BMA456_Startup(void);
-
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
