@@ -1,1 +1,3 @@
 # StarSync_CDP
+
+# Github repository for code relating to Capstone Design project for the StarSync team...
