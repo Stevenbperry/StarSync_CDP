@@ -31,7 +31,9 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "string.h"
 #include "BMA456.h"
+#include "HC05.h"
 
 // setup the includes for the EKF
 #define Nsta 3

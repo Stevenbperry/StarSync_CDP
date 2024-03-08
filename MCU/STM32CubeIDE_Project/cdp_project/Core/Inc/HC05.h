@@ -8,6 +8,8 @@
 #ifndef SRC_HC05_H_
 #define SRC_HC05_H_
 
+int HC05_Check(UART_HandleTypeDef, uint8_t*, uint8_t, int*);
+
 
 
 

@@ -42,10 +42,12 @@ UART_HandleTypeDef huart1;
 
 double accel[3] = {0, 0, 0}; 	// accelerometer values
 double filtered[3] = {0, 0, 0}; // filtered values
-uint8_t error_flag, drdy;	 // any error that the accelerometer might throw
+uint8_t error_flag;	 // any error that the accelerometer might throw
 ekf_t ekf;		// ekf object
 int inc = 0;
 uint32_t start, end, elapsed = 0;
+uint8_t HC05_data[100];
+int HC05_flag = 0;
 
 /* USER CODE END PV */
 
@@ -109,6 +111,10 @@ int main(void)
   while (1)
   {
 	  start = HAL_GetTick();
+	  // if we get a bluetooth request, transmit latest accel data
+	  if (HC05_Check(huart1, HC05_data, 30, &HC05_flag) == 1){
+		  HAL_UART_Transmit(&huart1, (uint8_t*) &filtered, sizeof(filtered), 100);
+	  }
 	  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
 	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
 	  // error_flag should be 0 under nominal operations
@@ -244,7 +250,7 @@ static void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
-
+  __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
   /* USER CODE END USART1_Init 2 */
 
 }
@@ -400,11 +406,16 @@ void model(ekf_t* ekf, double* z) {
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+
+  /* Turns on all the on-board LEDs if there is a critical error */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
+
+  HAL_Delay(5000); // 5 seconds pass and the controller resets
+  HAL_NVIC_SystemReset();
+
   /* USER CODE END Error_Handler_Debug */
 }
 
