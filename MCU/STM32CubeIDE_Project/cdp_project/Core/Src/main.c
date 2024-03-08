@@ -4,17 +4,11 @@
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
+#define Nsta 3 // 3 state values, ax, ay, az
+#define Mobs 3 // 3 measurements - x, y, z
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -43,8 +37,11 @@
 I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
-float accelX, accelY, accelZ;	// accelerometer values
-uint8_t error_flag, drdy; // any error that the accelerometer might throw
+
+double accel[3] = {0, 0, 0}; 	// accelerometer values
+double filtered[3] = {0, 0, 0}; // filtered values
+uint8_t error_flag, drdy;	 // any error that the accelerometer might throw
+ekf_t ekf;
 
 /* USER CODE END PV */
 
@@ -53,7 +50,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
-
+void model(ekf_t*, double*);
+void ekf_setup(ekf_t*);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -96,6 +94,8 @@ int main(void)
 
   BMA456_Startup(hi2c1);	// initializes the BMA456 accelerometer
 
+  ekf_setup(&ekf);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -106,9 +106,17 @@ int main(void)
 	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
 	  // error_flag should be 0 under nominal operations
 
-	  accelX = ((float) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
-	  accelY = ((float) accely / BMA456_FSR) * 9.80556;
-	  accelZ = ((float) accelz / BMA456_FSR) * 9.80556;
+	  accel[0] = ((double) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
+	  accel[1] = ((double) accely / BMA456_FSR) * 9.80556;
+	  accel[2] = ((double) accelz / BMA456_FSR) * 9.80556;
+
+	  model(&ekf, accel);
+
+	  ekf_step(&ekf, accel);
+
+	  filtered[0] = ekf.x[0];
+	  filtered[1] = ekf.x[1];
+	  filtered[2] = ekf.x[2];
 
 	  HAL_Delay(500);	// 0.5 second delay between reads
 
@@ -279,6 +287,66 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+  * @brief EKF Initialization function.
+  * @param ekf_t* ekf : ekf object defined in tiny_ekf_struct.h
+  * @retval None
+  */
+void ekf_setup(ekf_t* ekf){
+
+    // Initialize the EKF here
+    ekf_init(ekf, Nsta, Mobs);
+
+    // Set initial state estimates (e.g., to 0 if unknown)
+    for (int i = 0; i < Nsta; ++i) {
+        ekf->x[i] = 0.0;
+    }
+
+    // Define initial process noise covariance matrix Q
+    double q = 0.1; // example process noise variance
+    for (int i = 0; i < Nsta; ++i) {
+        ekf->Q[i][i] = q;
+    }
+
+    // Define initial measurement noise covariance matrix R
+    double r = 0.1; // example measurement noise variance
+    for (int i = 0; i < Mobs; ++i) {
+        ekf->R[i][i] = r;
+    }
+}
+/**
+  * @brief Creates state model for EKF.
+  * @param ekf_t* ekf : ekf object defined in tiny_ekf_struct.h
+  * @param double* z : input measurements
+  * @retval None
+  */
+void model(ekf_t* ekf, double* z) {
+    // Assuming direct measurement of acceleration for simplicity
+
+    // State transition function f(x)
+    for (int i = 0; i < Nsta; ++i) {
+        ekf->fx[i] = ekf->x[i]; // Simple model: next state is equal to current state
+    }
+
+    // Measurement function h(x)
+    for (int i = 0; i < Mobs; ++i) {
+        ekf->hx[i] = ekf->x[i]; // Direct observation: measurement equals state
+    }
+
+    // F and H Jacobian matrices
+    for (int i = 0; i < Nsta; ++i) {
+        for (int j = 0; j < Nsta; ++j) {
+            ekf->F[i][j] = (i == j) ? 1 : 0; // Identity matrix for F
+        }
+    }
+
+    for (int i = 0; i < Mobs; ++i) {
+        for (int j = 0; j < Nsta; ++j) {
+            ekf->H[i][j] = (i == j) ? 1 : 0; // Identity matrix for H
+        }
+    }
+}
 
 /* USER CODE END 4 */
 

@@ -32,6 +32,14 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "BMA456.h"
+
+// setup the includes for the EKF
+#define Nsta 3
+#define Mobs 3			// 3 state variables and 3 observations - ax, ay, az
+
+#include "tiny_ekf_struct.h"
+#include "tiny_ekf.h"
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
