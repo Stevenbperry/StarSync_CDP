@@ -36,12 +36,16 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+UART_HandleTypeDef huart1;
+
 /* USER CODE BEGIN PV */
 
 double accel[3] = {0, 0, 0}; 	// accelerometer values
 double filtered[3] = {0, 0, 0}; // filtered values
 uint8_t error_flag, drdy;	 // any error that the accelerometer might throw
-ekf_t ekf;
+ekf_t ekf;		// ekf object
+int inc = 0;
+uint32_t start, end, elapsed = 0;
 
 /* USER CODE END PV */
 
@@ -49,6 +53,7 @@ ekf_t ekf;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void model(ekf_t*, double*);
 void ekf_setup(ekf_t*);
@@ -90,6 +95,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
   BMA456_Startup(hi2c1);	// initializes the BMA456 accelerometer
@@ -102,6 +108,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  start = HAL_GetTick();
 	  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
 	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
 	  // error_flag should be 0 under nominal operations
@@ -113,13 +120,16 @@ int main(void)
 	  model(&ekf, accel);
 
 	  ekf_step(&ekf, accel);
-
-	  filtered[0] = ekf.x[0];
-	  filtered[1] = ekf.x[1];
-	  filtered[2] = ekf.x[2];
-
-	  HAL_Delay(500);	// 0.5 second delay between reads
-
+	  if (inc <= 500){
+		  ++inc;
+	  } else{
+		  inc = 0;
+		  filtered[0] = ekf.x[0];
+		  filtered[1] = ekf.x[1];
+		  filtered[2] = ekf.x[2];
+	  }
+	  end = HAL_GetTick();
+	  elapsed = end - start;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -203,6 +213,39 @@ static void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 9600;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
 
 }
 
@@ -310,7 +353,7 @@ void ekf_setup(ekf_t* ekf){
     }
 
     // Define initial measurement noise covariance matrix R
-    double r = 0.1; // example measurement noise variance
+    double r = 0.75; // example measurement noise variance
     for (int i = 0; i < Mobs; ++i) {
         ekf->R[i][i] = r;
     }
