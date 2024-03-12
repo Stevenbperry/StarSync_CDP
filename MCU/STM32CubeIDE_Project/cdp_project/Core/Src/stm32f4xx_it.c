@@ -208,7 +208,18 @@ void USART1_IRQHandler(void)
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */
-  HC05_flag = 1;
+  uint8_t data[100] = {0};
+  if (HAL_UART_Receive(&huart1, data, 30, 100) == HAL_OK){
+		if (strstr((char*) data, "start") != NULL) {
+			HC05_flag = 1;
+		} else if (strstr((char*) data, "stop") != NULL) {
+			HC05_flag = 0;
+			// repeat for however many commands there are
+		} else {
+			HC05_flag = 0; // return 0 if there was an invalid command, no response, etc
+		}
+  }
+
   /* USER CODE END USART1_IRQn 1 */
 }
 

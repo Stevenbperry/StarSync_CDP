@@ -47,7 +47,7 @@ ekf_t ekf;		// ekf object
 int inc = 0;
 uint32_t start, end, elapsed = 0;
 uint8_t HC05_data[100];
-int HC05_flag = 0;
+int HC05_flag = -1;
 
 /* USER CODE END PV */
 
@@ -112,7 +112,7 @@ int main(void)
   {
 	  start = HAL_GetTick();
 	  // if we get a bluetooth request, transmit latest accel data
-	  if (HC05_Check(huart1, HC05_data, 30, &HC05_flag) == 1){
+	  if (HC05_flag == 1){
 		  HAL_UART_Transmit(&huart1, (uint8_t*) &filtered, sizeof(filtered), 100);
 	  }
 	  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
