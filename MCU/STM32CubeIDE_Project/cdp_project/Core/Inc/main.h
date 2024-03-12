@@ -33,6 +33,7 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include "string.h"
 #include "BMA456.h"
+#include "Steppers.h"
 
 // setup the includes for the EKF
 #define Nsta 3
@@ -84,6 +85,12 @@ void Error_Handler(void);
 #define PH1_OSC_OUT_GPIO_Port GPIOH
 #define OTG_FS_PowerSwitchOn_Pin GPIO_PIN_0
 #define OTG_FS_PowerSwitchOn_GPIO_Port GPIOC
+#define TMC_2208_DIR_2_Pin GPIO_PIN_8
+#define TMC_2208_DIR_2_GPIO_Port GPIOD
+#define TMC_2208_STEP_2_Pin GPIO_PIN_9
+#define TMC_2208_STEP_2_GPIO_Port GPIOD
+#define TMC_2208_EN_2_Pin GPIO_PIN_10
+#define TMC_2208_EN_2_GPIO_Port GPIOD
 #define LD4_Pin GPIO_PIN_12
 #define LD4_GPIO_Port GPIOD
 #define LD3_Pin GPIO_PIN_13
@@ -92,6 +99,12 @@ void Error_Handler(void);
 #define LD5_GPIO_Port GPIOD
 #define LD6_Pin GPIO_PIN_15
 #define LD6_GPIO_Port GPIOD
+#define TMC2208_EN_1_Pin GPIO_PIN_7
+#define TMC2208_EN_1_GPIO_Port GPIOC
+#define TMC2208_DIR_1_Pin GPIO_PIN_8
+#define TMC2208_DIR_1_GPIO_Port GPIOC
+#define TMC2208_STEP_1_Pin GPIO_PIN_9
+#define TMC2208_STEP_1_GPIO_Port GPIOC
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
