@@ -216,7 +216,7 @@ void USART1_IRQHandler(void)
 			HC05_flag = 0;
 			// repeat for however many commands there are
 		} else {
-			HC05_flag = 0; // return 0 if there was an invalid command, no response, etc
+			HC05_flag = -1; // return 0 if there was an invalid command, no response, etc
 		}
   }
 

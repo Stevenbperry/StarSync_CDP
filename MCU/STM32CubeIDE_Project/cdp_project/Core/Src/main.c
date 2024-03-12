@@ -118,21 +118,24 @@ int main(void)
 	  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
 	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
 	  // error_flag should be 0 under nominal operations
+	  if (error_flag == 0){
+		  accel[0] = ((double) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
+		  accel[1] = ((double) accely / BMA456_FSR) * 9.80556;
+		  accel[2] = ((double) accelz / BMA456_FSR) * 9.80556;
 
-	  accel[0] = ((double) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
-	  accel[1] = ((double) accely / BMA456_FSR) * 9.80556;
-	  accel[2] = ((double) accelz / BMA456_FSR) * 9.80556;
+		  model(&ekf, accel);
 
-	  model(&ekf, accel);
-
-	  ekf_step(&ekf, accel);
-	  if (inc <= 500){
-		  ++inc;
+		  ekf_step(&ekf, accel);
+		  if (inc <= 500){
+			  ++inc;
+		  } else{
+			  inc = 0;
+			  filtered[0] = ekf.x[0];
+			  filtered[1] = ekf.x[1];
+			  filtered[2] = ekf.x[2];
+		  }
 	  } else{
-		  inc = 0;
-		  filtered[0] = ekf.x[0];
-		  filtered[1] = ekf.x[1];
-		  filtered[2] = ekf.x[2];
+		  Error_Handler();
 	  }
 	  end = HAL_GetTick();
 	  elapsed = end - start;
@@ -406,15 +409,33 @@ void model(ekf_t* ekf, double* z) {
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET);
 
   /* Turns on all the on-board LEDs if there is a critical error */
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
+	if (error_flag == 1){
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
+	} else if (error_flag == 2){
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
+	} else if (error_flag == 4){
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
+	} else if (error_flag == 8){
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
+	} else {
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
+	}
 
-  HAL_Delay(5000); // 5 seconds pass and the controller resets
-  HAL_NVIC_SystemReset();
+  // HAL_Delay(5000); // 5 seconds pass and the controller resets
+  // HAL_NVIC_SystemReset();
+
+  while (1){
+
+  }
 
   /* USER CODE END Error_Handler_Debug */
 }
