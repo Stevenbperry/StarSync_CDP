@@ -90,7 +90,7 @@ void BMA456_ReadAccelData(int16_t* accelX, int16_t* accelY, int16_t* accelZ,
  */
 void BMA456_Write(uint8_t reg, uint8_t data, I2C_HandleTypeDef serial) {
 	uint8_t buf[2] = {reg, data};
-    HAL_I2C_Master_Transmit(&serial, BMA456_ADDR, (uint8_t*) &buf, 2, MAX_DEL);
+    HAL_I2C_Master_Transmit(&serial, BMA_456_1, (uint8_t*) &buf, 2, MAX_DEL);
 }
 /*
  * @param uint8_t reg: The device register you are writing to
@@ -106,11 +106,11 @@ void BMA456_Write(uint8_t reg, uint8_t data, I2C_HandleTypeDef serial) {
 HAL_StatusTypeDef BMA456_Read(uint8_t reg, uint8_t* data, uint16_t* size,
 		I2C_HandleTypeDef serial) {
 	HAL_StatusTypeDef result;
-    result = HAL_I2C_Master_Transmit(&serial, BMA456_ADDR, &reg, 1, MAX_DEL);
+    result = HAL_I2C_Master_Transmit(&serial, BMA_456_1, &reg, 1, MAX_DEL);
     if(result != HAL_OK) {
     	return result;
     }
-    result = HAL_I2C_Master_Receive(&serial, BMA456_ADDR, data, *size, MAX_DEL);
+    result = HAL_I2C_Master_Receive(&serial, BMA_456_1, data, *size, MAX_DEL);
 
     return result;
 }

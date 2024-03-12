@@ -9,7 +9,7 @@
 #define INC_BMA456_H_
 
 
-#define BMA456_ADDR 0x18 << 1
+#define BMA_456_1 0x18 << 1
 #define MAX_DEL 1000
 #define BMA456_FSR 16384 // full scale range at +-2g
 
