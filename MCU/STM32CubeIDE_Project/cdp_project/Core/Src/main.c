@@ -7,8 +7,7 @@
   *
   ******************************************************************************
   */
-#define Nsta 3 // 3 state values, ax, ay, az
-#define Mobs 3 // 3 measurements - x, y, z
+
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
