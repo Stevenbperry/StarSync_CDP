@@ -115,10 +115,10 @@ int main(void)
 	  if (HC05_flag == 1){
 		  HAL_UART_Transmit(&huart1, (uint8_t*) &filtered, sizeof(filtered), 100);
 	  }
-	  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
 	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
 	  // error_flag should be 0 under nominal operations
 	  if (error_flag == 0){
+		  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
 		  accel[0] = ((double) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
 		  accel[1] = ((double) accely / BMA456_FSR) * 9.80556;
 		  accel[2] = ((double) accelz / BMA456_FSR) * 9.80556;
