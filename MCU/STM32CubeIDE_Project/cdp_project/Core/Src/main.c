@@ -423,6 +423,7 @@ void model(ekf_t* ekf, double* z) {
 }
 /**
   * @brief If user push putton is detected, go into pairing mode.
+  * @param None
   * @retval None
   */
 void HC05_pair(void){
