@@ -47,6 +47,7 @@ int inc = 0;
 uint32_t start, end, elapsed = 0;
 uint8_t HC05_data[100];
 int HC05_flag = -1;
+int pairing_flag = 0;
 
 /* USER CODE END PV */
 
@@ -58,6 +59,7 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void model(ekf_t*, double*);
 void ekf_setup(ekf_t*);
+void HC05_pair(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -110,6 +112,10 @@ int main(void)
   while (1)
   {
 	  start = HAL_GetTick();
+	  // if we are in bluetooth pairing mode, we do that first
+	  if (pairing_flag == 0){
+		  HC05_pair();
+	  }
 	  // if we get a bluetooth request, transmit latest accel data
 	  if (HC05_flag == 1){
 		  HAL_UART_Transmit(&huart1, (uint8_t*) &filtered, sizeof(filtered), 100);
@@ -287,7 +293,10 @@ static void MX_GPIO_Init(void)
                           |LD3_Pin|LD5_Pin|LD6_Pin|Audio_RST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, TMC2208_DIR_1_Pin|TMC2208_STEP_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, TMC2208_EN_1_Pin|TMC2208_DIR_1_Pin|TMC2208_STEP_1_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(HC05_AT_GPIO_Port, HC05_AT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : DATA_Ready_Pin */
   GPIO_InitStruct.Pin = DATA_Ready_Pin;
@@ -308,8 +317,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : OTG_FS_PowerSwitchOn_Pin TMC2208_DIR_1_Pin TMC2208_STEP_1_Pin */
-  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin|TMC2208_DIR_1_Pin|TMC2208_STEP_1_Pin;
+  /*Configure GPIO pins : OTG_FS_PowerSwitchOn_Pin TMC2208_EN_1_Pin TMC2208_DIR_1_Pin TMC2208_STEP_1_Pin */
+  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin|TMC2208_EN_1_Pin|TMC2208_DIR_1_Pin|TMC2208_STEP_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -317,7 +326,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PA0 */
   GPIO_InitStruct.Pin = GPIO_PIN_0;
-  GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -330,17 +339,22 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : TMC2208_EN_1_Pin */
-  GPIO_InitStruct.Pin = TMC2208_EN_1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : HC05_AT_Pin */
+  GPIO_InitStruct.Pin = HC05_AT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(TMC2208_EN_1_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(HC05_AT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : OTG_FS_OverCurrent_Pin */
   GPIO_InitStruct.Pin = OTG_FS_OverCurrent_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(OTG_FS_OverCurrent_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -406,6 +420,20 @@ void model(ekf_t* ekf, double* z) {
             ekf->H[i][j] = (i == j) ? 1 : 0; // Identity matrix for H
         }
     }
+}
+/**
+  * @brief If user push putton is detected, go into pairing mode.
+  * @retval None
+  */
+void HC05_pair(void){
+	// sets the HC05 into AT mode
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_SET);
+	while (pairing_flag == 0) {
+		// wait
+	}
+	// turns off AT mode
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_RESET);
+
 }
 
 /* USER CODE END 4 */

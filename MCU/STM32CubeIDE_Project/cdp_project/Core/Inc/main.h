@@ -106,6 +106,8 @@ void Error_Handler(void);
 #define TMC2208_DIR_1_GPIO_Port GPIOC
 #define TMC2208_STEP_1_Pin GPIO_PIN_9
 #define TMC2208_STEP_1_GPIO_Port GPIOC
+#define HC05_AT_Pin GPIO_PIN_11
+#define HC05_AT_GPIO_Port GPIOA
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
