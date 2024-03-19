@@ -428,12 +428,12 @@ void model(ekf_t* ekf, double* z) {
   */
 void HC05_pair(void){
 	// sets the HC05 into AT mode
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 	while (pairing_flag == 0) {
 		// wait
 	}
 	// turns off AT mode
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
 
 }
 
