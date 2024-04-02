@@ -35,6 +35,7 @@ extern "C" {
 #include "BMA456.h"
 #include "Steppers.h"
 #include "Quaternion.h"
+#include "HC05.h"
 
 // setup the includes for the EKF
 #define Nsta 3

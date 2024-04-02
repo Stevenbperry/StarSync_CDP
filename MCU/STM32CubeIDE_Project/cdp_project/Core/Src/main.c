@@ -59,7 +59,6 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void model(ekf_t*, double*);
 void ekf_setup(ekf_t*);
-void HC05_pair(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -73,6 +72,7 @@ void HC05_pair(void);
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -114,34 +114,34 @@ int main(void)
 	  start = HAL_GetTick();
 	  // if we are in bluetooth pairing mode, we do that first
 	  if (pairing_flag == 0){
-		  HC05_pair();
+		  HC05_pair(&pairing_flag, huart1);
 	  }
 	  // if we get a bluetooth request, transmit latest accel data
-	  if (HC05_flag == 1){
-		  HAL_UART_Transmit(&huart1, (uint8_t*) &filtered, sizeof(filtered), 100);
-	  }
-	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
-	  // error_flag should be 0 under nominal operations
-	  if (error_flag == 0){
-		  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
-		  accel[0] = ((double) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
-		  accel[1] = ((double) accely / BMA456_FSR) * 9.80556;
-		  accel[2] = ((double) accelz / BMA456_FSR) * 9.80556;
-
-		  model(&ekf, accel);
-
-		  ekf_step(&ekf, accel);
-		  if (inc <= 500){
-			  ++inc;
-		  } else{
-			  inc = 0;
-			  filtered[0] = ekf.x[0];
-			  filtered[1] = ekf.x[1];
-			  filtered[2] = ekf.x[2];
-		  }
-	  } else{
-		  Error_Handler();
-	  }
+//	  if (HC05_flag == 1){
+//		  HAL_UART_Transmit(&huart1, (uint8_t*) &filtered, sizeof(filtered), 100);
+//	  }
+//	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
+//	  // error_flag should be 0 under nominal operations
+//	  if (error_flag == 0){
+//		  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
+//		  accel[0] = ((double) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
+//		  accel[1] = ((double) accely / BMA456_FSR) * 9.80556;
+//		  accel[2] = ((double) accelz / BMA456_FSR) * 9.80556;
+//
+//		  model(&ekf, accel);
+//
+//		  ekf_step(&ekf, accel);
+//		  if (inc <= 500){
+//			  ++inc;
+//		  } else{
+//			  inc = 0;
+//			  filtered[0] = ekf.x[0];
+//			  filtered[1] = ekf.x[1];
+//			  filtered[2] = ekf.x[2];
+//		  }
+//	  } else{
+//		  Error_Handler();
+//	  }
 	  end = HAL_GetTick();
 	  elapsed = end - start;
     /* USER CODE END WHILE */
@@ -246,7 +246,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 9600;
+  huart1.Init.BaudRate = 38400;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -420,21 +420,6 @@ void model(ekf_t* ekf, double* z) {
             ekf->H[i][j] = (i == j) ? 1 : 0; // Identity matrix for H
         }
     }
-}
-/**
-  * @brief If user push putton is detected, go into pairing mode.
-  * @param None
-  * @retval None
-  */
-void HC05_pair(void){
-	// sets the HC05 into AT mode
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-	while (pairing_flag == 0) {
-		// wait
-	}
-	// turns off AT mode
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
-
 }
 
 /* USER CODE END 4 */
