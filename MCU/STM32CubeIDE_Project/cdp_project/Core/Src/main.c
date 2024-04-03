@@ -112,36 +112,28 @@ int main(void)
   while (1)
   {
 	  start = HAL_GetTick();
-	  // if we are in bluetooth pairing mode, we do that first
-	  if (pairing_flag == 0){
-		  HC05_pair(&pairing_flag, huart1);
+	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
+	  // error_flag should be 0 under nominal operations
+	  if (error_flag == 0){
+		  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
+		  accel[0] = ((double) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
+		  accel[1] = ((double) accely / BMA456_FSR) * 9.80556;
+		  accel[2] = ((double) accelz / BMA456_FSR) * 9.80556;
+
+		  model(&ekf, accel);
+
+		  ekf_step(&ekf, accel);
+		  if (inc <= 500){
+			  ++inc;
+		  } else{
+			  inc = 0;
+			  filtered[0] = ekf.x[0];
+			  filtered[1] = ekf.x[1];
+			  filtered[2] = ekf.x[2];
+		  }
+	  } else{
+		  Error_Handler();
 	  }
-	  // if we get a bluetooth request, transmit latest accel data
-//	  if (HC05_flag == 1){
-//		  HAL_UART_Transmit(&huart1, (uint8_t*) &filtered, sizeof(filtered), 100);
-//	  }
-//	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
-//	  // error_flag should be 0 under nominal operations
-//	  if (error_flag == 0){
-//		  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
-//		  accel[0] = ((double) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
-//		  accel[1] = ((double) accely / BMA456_FSR) * 9.80556;
-//		  accel[2] = ((double) accelz / BMA456_FSR) * 9.80556;
-//
-//		  model(&ekf, accel);
-//
-//		  ekf_step(&ekf, accel);
-//		  if (inc <= 500){
-//			  ++inc;
-//		  } else{
-//			  inc = 0;
-//			  filtered[0] = ekf.x[0];
-//			  filtered[1] = ekf.x[1];
-//			  filtered[2] = ekf.x[2];
-//		  }
-//	  } else{
-//		  Error_Handler();
-//	  }
 	  end = HAL_GetTick();
 	  elapsed = end - start;
     /* USER CODE END WHILE */
@@ -311,8 +303,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(CS_I2C_SPI_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : INT1_Pin INT2_Pin MEMS_INT2_Pin */
-  GPIO_InitStruct.Pin = INT1_Pin|INT2_Pin|MEMS_INT2_Pin;
+  /*Configure GPIO pins : INT1_Pin INT2_Pin I2C_INTERRUPT_Pin */
+  GPIO_InitStruct.Pin = INT1_Pin|INT2_Pin|I2C_INTERRUPT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
