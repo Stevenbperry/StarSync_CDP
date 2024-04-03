@@ -10,6 +10,7 @@
 
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include "stm32f4xx_hal.h"
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -97,6 +98,27 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_USART1_UART_Init();
+
+  // Initialize the magnetometer
+  MAGNETO_InitTypeDef initStruct = {0};
+
+  	  // Enable temperature sensor, set XY to medium performance, and data rate to 10 Hz
+  	  initStruct.Register1 = (1 << 7) | (0x01 << 5) | (0x04 << 2);
+
+  	  // Set full-scale to ±4 gauss
+  	  initStruct.Register2 = 0x00;
+
+  	  // Continuous-conversion mode
+  	  initStruct.Register3 = 0x00;
+
+  	  // Z-axis to medium performance
+  	  initStruct.Register4 = 0x04;
+
+  	  // Block data update: continuous update
+  	  initStruct.Register5 = 0x00;
+
+  LIS3MDL_MagInit(initStruct);
+
   /* USER CODE BEGIN 2 */
 
   BMA456_Startup(hi2c1);	// initializes the BMA456 accelerometer
@@ -110,32 +132,16 @@ int main(void)
   while (1)
   {
 	  start = HAL_GetTick();
-	  // if we get a bluetooth request, transmit latest accel data
-	  if (HC05_flag == 1){
-		  HAL_UART_Transmit(&huart1, (uint8_t*) &filtered, sizeof(filtered), 100);
-	  }
-	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
-	  // error_flag should be 0 under nominal operations
-	  if (error_flag == 0){
-		  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
-		  accel[0] = ((double) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
-		  accel[1] = ((double) accely / BMA456_FSR) * 9.80556;
-		  accel[2] = ((double) accelz / BMA456_FSR) * 9.80556;
 
-		  model(&ekf, accel);
+	  	  int16_t magData[3] = {0}; // Array to hold X, Y, Z magnetometer data
 
-		  ekf_step(&ekf, accel);
-		  if (inc <= 500){
-			  ++inc;
-		  } else{
-			  inc = 0;
-			  filtered[0] = ekf.x[0];
-			  filtered[1] = ekf.x[1];
-			  filtered[2] = ekf.x[2];
-		  }
-	  } else{
-		  Error_Handler();
-	  }
+	      LIS3MDL_MagReadXYZ(magData); // Read magnetometer data
+
+	      // Process or display your magnetometer data here
+	      // For example, sending it over UART or logging it
+
+	      HAL_Delay(1000); // Delay for a second for demo purposes
+
 	  end = HAL_GetTick();
 	  elapsed = end - start;
     /* USER CODE END WHILE */
@@ -144,6 +150,75 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
+/**
+  * @brief Writes a byte to a sensor register over I2C.
+  * @param Addr: I2C address of the sensor.
+  * @param Reg: Register address to write to.
+  * @param Value: Data byte to write.
+  * @retval None
+  */
+void SENSOR_IO_Write(uint8_t Addr, uint8_t Reg, uint8_t Value)
+{
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1,
+                                                 Addr,
+                                                 (uint16_t)Reg,
+                                                 I2C_MEMADD_SIZE_8BIT,
+                                                 &Value,
+                                                 1,
+                                                 1000);
+    if(status != HAL_OK)
+    {
+        // Handle error
+        Error_Handler(); // Implement this function to handle errors appropriately
+    }
+}
+/**
+  * @brief Reads a byte from a sensor register over I2C.
+  * @param Addr: I2C address of the sensor.
+  * @param Reg: Register address from which to read.
+  * @retval uint8_t: The value read from the sensor register.
+  */
+uint8_t SENSOR_IO_Read(uint8_t Addr, uint8_t Reg)
+{
+    uint8_t value = 0;
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1,
+                                                 Addr,
+                                                 (uint16_t)Reg,
+                                                 I2C_MEMADD_SIZE_8BIT,
+                                                 &value,
+                                                 1,
+                                                 1000);
+    if(status != HAL_OK)
+    {
+        // Handle error
+        Error_Handler(); // Implement this function to handle errors appropriately
+    }
+    return value;
+}
+/**
+  * @brief Reads multiple bytes from sensor registers over I2C.
+  * @param Addr: I2C address of the sensor.
+  * @param Reg: First register address to start reading from.
+  * @param Buffer: Pointer to the buffer to store the read data.
+  * @param Length: Number of bytes to read.
+  * @retval None
+  */
+//void SENSOR_IO_ReadMultiple(uint8_t Addr, uint8_t Reg, uint8_t *Buffer, uint16_t Length)
+uint16_t SENSOR_IO_ReadMultiple(uint8_t Addr, uint8_t Reg, uint8_t *Buffer, uint16_t Length) {
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1,
+                                                 Addr << 1, // Address might need shifting
+                                                 Reg,
+                                                 I2C_MEMADD_SIZE_8BIT,
+                                                 Buffer,
+                                                 Length,
+                                                 1000);
+    if(status == HAL_OK) {
+        return 0; // Assuming 0 indicates success
+    } else {
+        return 1; // Use an error code to indicate failure
+    }
+}
+
 
 /**
   * @brief System Clock Configuration
