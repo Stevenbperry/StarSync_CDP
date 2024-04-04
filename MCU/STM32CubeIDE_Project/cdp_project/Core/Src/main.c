@@ -56,7 +56,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
-void calculateAnglesFromAcceleration(double, double, double, double*, double*);
+void calculateAnglesFromAcceleration(const double dAccel[3], double *altitude, double *azimuth);
+
 /* USER CODE BEGIN PFP */
 void model(ekf_t*, double*);
 void ekf_setup(ekf_t*);
@@ -127,13 +128,21 @@ int main(void)
 				BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
 
 				// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
-				double dAccelX = (double)accelX / BMA456_FSR * 9.81;
-				double dAccelY = (double)accelY / BMA456_FSR * 9.81;
-				double dAccelZ = (double)accelZ / BMA456_FSR * 9.81;
+				double dAccel[3];
+				dAccel[0] = (double)accelX / BMA456_FSR * 9.80665;
+				dAccel[1] = (double)accelY / BMA456_FSR * 9.80665;
+				dAccel[2] = (double)accelZ / BMA456_FSR * 9.80665;
 
+				model(&ekf, dAccel);
+
+				ekf_step(&ekf, dAccel);
+
+				filtered[0] = ekf.x[0];
+				filtered[1] = ekf.x[1];
+				filtered[2] = ekf.x[2];
 				// Calculate angles
 				double altitude, azimuth;
-				calculateAnglesFromAcceleration(dAccelX, dAccelY, dAccelZ, &altitude, &azimuth);
+				calculateAnglesFromAcceleration(filtered, &altitude, &azimuth);
 
 				// Optionally, send these values over UART for debugging
 				char debugMsg[100];
@@ -457,7 +466,10 @@ void model(ekf_t* ekf, double* z) {
  * @param double accelX, accelY, accelZ: formatted accelerometer data in m/s^2
  * @param double* altitude, azimuth: pointers that point to the variables where the results will be stored
  */
-void calculateAnglesFromAcceleration(double accelX, double accelY, double accelZ, double *altitude, double *azimuth) {
+void calculateAnglesFromAcceleration(const double accel[3], double *altitude, double *azimuth) {
+	double accelX = accel[0];
+	double accelY = accel[1];
+	double accelZ = accel[2];
     *altitude = atan2(accelY, sqrt(accelX * accelX + accelZ * accelZ)) * 180.0 / M_PI;
     *azimuth = atan2(accelX, accelZ) * 180.0 / M_PI;
 }
