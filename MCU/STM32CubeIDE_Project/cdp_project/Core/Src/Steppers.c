@@ -15,55 +15,82 @@
 /*
  * Enables the TMC2208 driver
  */
-void Enable_Steppers(void){
-	HAL_GPIO_WritePin(GPIOC, TMC_2208_EN_1, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD, TMC_2208_EN_2, GPIO_PIN_SET);
+void enable_steppers(void){
+	HAL_GPIO_WritePin(GPIOC, TMC_2208_EN_1_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOD, TMC_2208_EN_2_Pin, GPIO_PIN_SET);
 }
 /*
  * Disables the TMC2208 driver
  */
-void Disable_Steppers(void){
-	HAL_GPIO_WritePin(GPIOC, TMC_2208_EN_1, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOD, TMC_2208_EN_2, GPIO_PIN_RESET);
+void disable_steppers(void){
+	HAL_GPIO_WritePin(GPIOC, TMC_2208_EN_1_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOD, TMC_2208_EN_2_Pin, GPIO_PIN_RESET);
 }
 /*
- * Sets the DIR pin for the 1st stepper to high
+ * Sets the DIR pin for a stepper to low
  */
-void Step1_Forward(void){
-	HAL_GPIO_WritePin(GPIOC, TMC_2208_DIR_1, GPIO_PIN_SET);
+void direction_forward(int motor){
+	if(motor==1){
+		HAL_GPIO_WritePin(GPIOD, TMC_2208_DIR_1_Pin, GPIO_PIN_SET);
+	}
+	if(motor==2){
+		HAL_GPIO_WritePin(GPIOD, TMC_2208_DIR_2_Pin, GPIO_PIN_SET);
+	}
 }
 /*
- * Sets the DIR pin for the 1st stepper to low
+ * Sets the DIR pin for a stepper to high
  */
-void Step1_Backward(void){
-	HAL_GPIO_WritePin(GPIOC, TMC_2208_DIR_1, GPIO_PIN_RESET);
-}
-/*
- * Sets the DIR pin for the 2nd stepper to high
- */
-void Step2_Forward(void){
-	HAL_GPIO_WritePin(GPIOD, TMC_2208_DIR_2, GPIO_PIN_SET);
-}
-/*
- * Sets the DIR pin for the 2nd stepper to high
- */
-void Step2_Backward(void){
-	HAL_GPIO_WritePin(GPIOD, TMC_2208_DIR_2, GPIO_PIN_RESET);
-}
-/*
- * Steps the 1st stepper motor
- */
-void Step1(void){
-	HAL_GPIO_WritePin(GPIOC, TMC_2208_STEP_1, GPIO_PIN_SET);
-	HAL_Delay(1);
-	HAL_GPIO_WritePin(GPIOC, TMC_2208_STEP_1, GPIO_PIN_RESET);
+void direction_backward(int motor){
+	if(motor==1){
+		HAL_GPIO_WritePin(GPIOD, TMC_2208_DIR_1_Pin, GPIO_PIN_RESET);
+	}
+	if(motor==2){
+		HAL_GPIO_WritePin(GPIOD, TMC_2208_DIR_2_Pin, GPIO_PIN_RESET);
+	}
 }
 /*
  * Steps the 2nd stepper motor
  */
-void Step2(void){
-	HAL_GPIO_WritePin(GPIOD, TMC_2208_STEP_2, GPIO_PIN_SET);
-	HAL_Delay(1);
-	HAL_GPIO_WritePin(GPIOD, TMC_2208_STEP_2, GPIO_PIN_RESET);
+void step(int motor){
+	if(motor == 1){
+		HAL_GPIO_WritePin(GPIOD, TMC_2208_STEP_1_Pin, GPIO_PIN_SET);
+		HAL_Delay(1);
+		HAL_GPIO_WritePin(GPIOD, TMC_2208_STEP_1_Pin, GPIO_PIN_RESET);
+	}
+	if(motor == 2){
+		HAL_GPIO_WritePin(GPIOD, TMC_2208_STEP_2_Pin, GPIO_PIN_SET);
+		HAL_Delay(1);
+		HAL_GPIO_WritePin(GPIOD, TMC_2208_STEP_2_Pin, GPIO_PIN_RESET);
+	}
 }
-
+/*
+ * Selects microstep configuration for either stepper motor
+ */
+void microstep(int motor, int val){
+	int ms1, ms2;
+	if(motor == 2){
+		ms1 = TMC_2208_2_MS1_Pin;
+		ms2 = TMC_2208_2_MS2_Pin;
+	}else{
+		ms1 = TMC_2208_1_MS1_Pin;
+		ms2 = TMC_2208_1_MS2_Pin;
+	}
+	switch(val){
+		case 1:
+			HAL_GPIO_WritePin(GPIOD, ms1, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOD, ms2, GPIO_PIN_RESET);
+			break;
+		case 2:
+			HAL_GPIO_WritePin(GPIOD, ms1, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOD, ms2, GPIO_PIN_SET);
+			break;
+		case 3:
+			HAL_GPIO_WritePin(GPIOD, ms1, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOD, ms2, GPIO_PIN_SET);
+			break;
+		default:
+			HAL_GPIO_WritePin(GPIOD, ms1, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOD, ms2, GPIO_PIN_RESET);
+			break;
+	}
+}

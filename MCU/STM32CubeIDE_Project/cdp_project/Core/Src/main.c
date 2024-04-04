@@ -84,8 +84,6 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-  int16_t accelx, accely, accelz;
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -295,7 +293,7 @@ static void MX_GPIO_Init(void)
                           |Audio_RST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, TMC_2208_1_MS2_Pin|TMC2208_EN_1_Pin|TMC2208_DIR_1_Pin|TMC2208_STEP_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, TMC_2208_1_MS2_Pin|TMC_2208_EN_1_Pin|TMC_2208_DIR_1_Pin|TMC_2208_STEP_1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, TMC_2208_1_MS1_Pin|HC05_AT_Pin, GPIO_PIN_RESET);
@@ -319,10 +317,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : OTG_FS_PowerSwitchOn_Pin TMC_2208_1_MS2_Pin TMC2208_EN_1_Pin TMC2208_DIR_1_Pin
-                           TMC2208_STEP_1_Pin */
-  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin|TMC_2208_1_MS2_Pin|TMC2208_EN_1_Pin|TMC2208_DIR_1_Pin
-                          |TMC2208_STEP_1_Pin;
+  /*Configure GPIO pins : OTG_FS_PowerSwitchOn_Pin TMC_2208_1_MS2_Pin TMC_2208_EN_1_Pin TMC_2208_DIR_1_Pin
+                           TMC_2208_STEP_1_Pin */
+  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin|TMC_2208_1_MS2_Pin|TMC_2208_EN_1_Pin|TMC_2208_DIR_1_Pin
+                          |TMC_2208_STEP_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
