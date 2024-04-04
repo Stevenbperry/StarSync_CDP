@@ -8,12 +8,12 @@
 #ifndef INC_STEPPERS_H_
 #define INC_STEPPERS_H_
 
-void enable_steppers(void);
-void disable_steppers(void);
-void direction_forward(int);
-void direction_backward(int);
-void step(int);
-void microstep(int, int);
+void Enable_Steppers(void);
+void Disable_Steppers(void);
+void Direction_Forward(int);
+void Direction_Backward(int);
+void Step(int);
+void Microstep(int, int);
 
 
 #endif /* INC_STEPPERS_H_ */
