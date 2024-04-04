@@ -111,29 +111,35 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  start = HAL_GetTick();
-	  BMA456_ReadErrorFlag(&error_flag, hi2c1);	// checks if there was an error flag
-	  // error_flag should be 0 under nominal operations
-	  if (error_flag == 0){
-		  BMA456_ReadAccelData(&accelx, &accely, &accelz, hi2c1);	// gets acceleration data
-		  accel[0] = ((double) accelx / BMA456_FSR) * 9.80556;	// convert to m/s^2
-		  accel[1] = ((double) accely / BMA456_FSR) * 9.80556;
-		  accel[2] = ((double) accelz / BMA456_FSR) * 9.80556;
+	  start = HAL_GetTick();// Define mode status globally or in main()
+	  HC05_ModeStatus modeStatus = {MODE_STANDBY};
 
-		  model(&ekf, accel);
+	  // Somewhere in your loop or interrupt service routine
+	  char receivedCommand[10]; // Assume commands are received here
+	  HC05_ProcessCommand(receivedCommand, &modeStatus, &huart1);
 
-		  ekf_step(&ekf, accel);
-		  if (inc <= 500){
-			  ++inc;
-		  } else{
-			  inc = 0;
-			  filtered[0] = ekf.x[0];
-			  filtered[1] = ekf.x[1];
-			  filtered[2] = ekf.x[2];
-		  }
-	  } else{
-		  Error_Handler();
+	  // Based on modeStatus.currentMode, switch between different operational modes.
+	  switch(modeStatus.currentMode) {
+	      case MODE_POINTING:
+	          // Implement pointing mode operation
+	          break;
+	      case MODE_STANDBY:
+	          // Implement standby mode operation
+	          break;
+	      case MODE_CALIBRATION:
+	          // Implement calibration mode operation
+	          break;
+	      case MODE_HEALTH_CHECK:
+	          // Implement health check mode operation
+	          break;
+	      default:
+	    	    const char msg[] = "Failure to change modes.";
+	    	    HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+	    	    error_flag = 16;
+	    	    Error_Handler();
+	          break;
 	  }
+
 	  end = HAL_GetTick();
 	  elapsed = end - start;
     /* USER CODE END WHILE */
@@ -458,6 +464,9 @@ void Error_Handler(void)
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
 	} else if (error_flag == 8){
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
+	} else if (error_flag == 16){
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
 	} else {
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
@@ -465,12 +474,8 @@ void Error_Handler(void)
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
 	}
 
-  // HAL_Delay(5000); // 5 seconds pass and the controller resets
-  // HAL_NVIC_SystemReset();
-
-  while (1){
-
-  }
+  HAL_Delay(10000); // 10 seconds pass and the controller resets
+  HAL_NVIC_SystemReset();
 
   /* USER CODE END Error_Handler_Debug */
 }

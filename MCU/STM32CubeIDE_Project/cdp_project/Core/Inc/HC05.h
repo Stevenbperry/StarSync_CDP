@@ -8,6 +8,19 @@
 #ifndef INC_HC05_H_
 #define INC_HC05_H_
 
+typedef enum {
+    MODE_POINTING,
+    MODE_STANDBY,
+    MODE_CALIBRATION,
+    MODE_HEALTH_CHECK
+} SystemMode;
+
+typedef struct {
+    SystemMode currentMode;
+} HC05_ModeStatus;
+
+
+void HC05_ProcessCommand(char* command, HC05_ModeStatus* status, UART_HandleTypeDef* huart);
 void HC05_pair(int*, UART_HandleTypeDef);
 
 #endif /* INC_HC05_H_ */
