@@ -271,8 +271,8 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CS_I2C_SPI_GPIO_Port, CS_I2C_SPI_Pin, GPIO_PIN_RESET);
@@ -281,14 +281,18 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(OTG_FS_PowerSwitchOn_GPIO_Port, OTG_FS_PowerSwitchOn_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, TMC_2208_DIR_2_Pin|TMC_2208_STEP_2_Pin|TMC_2208_EN_2_Pin|LD4_Pin
-                          |LD3_Pin|LD5_Pin|LD6_Pin|Audio_RST_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(TMC_2208_2_MS2_GPIO_Port, TMC_2208_2_MS2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, TMC2208_EN_1_Pin|TMC2208_DIR_1_Pin|TMC2208_STEP_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, TMC_2208_DIR_2_Pin|TMC_2208_STEP_2_Pin|TMC_2208_EN_2_Pin|TMC_2208_2_MS1_Pin
+                          |LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
+                          |Audio_RST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(HC05_AT_GPIO_Port, HC05_AT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, TMC_2208_1_MS2_Pin|TMC2208_EN_1_Pin|TMC2208_DIR_1_Pin|TMC2208_STEP_1_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, TMC_2208_1_MS1_Pin|HC05_AT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : DATA_Ready_Pin */
   GPIO_InitStruct.Pin = DATA_Ready_Pin;
@@ -309,8 +313,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : OTG_FS_PowerSwitchOn_Pin TMC2208_EN_1_Pin TMC2208_DIR_1_Pin TMC2208_STEP_1_Pin */
-  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin|TMC2208_EN_1_Pin|TMC2208_DIR_1_Pin|TMC2208_STEP_1_Pin;
+  /*Configure GPIO pins : OTG_FS_PowerSwitchOn_Pin TMC_2208_1_MS2_Pin TMC2208_EN_1_Pin TMC2208_DIR_1_Pin
+                           TMC2208_STEP_1_Pin */
+  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin|TMC_2208_1_MS2_Pin|TMC2208_EN_1_Pin|TMC2208_DIR_1_Pin
+                          |TMC2208_STEP_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -322,27 +328,42 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : TMC_2208_DIR_2_Pin TMC_2208_STEP_2_Pin TMC_2208_EN_2_Pin LD4_Pin
-                           LD3_Pin LD5_Pin LD6_Pin Audio_RST_Pin */
-  GPIO_InitStruct.Pin = TMC_2208_DIR_2_Pin|TMC_2208_STEP_2_Pin|TMC_2208_EN_2_Pin|LD4_Pin
-                          |LD3_Pin|LD5_Pin|LD6_Pin|Audio_RST_Pin;
+  /*Configure GPIO pin : TMC_2208_2_MS2_Pin */
+  GPIO_InitStruct.Pin = TMC_2208_2_MS2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(TMC_2208_2_MS2_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : TMC_2208_DIR_2_Pin TMC_2208_STEP_2_Pin TMC_2208_EN_2_Pin TMC_2208_2_MS1_Pin
+                           LD4_Pin LD3_Pin LD5_Pin LD6_Pin
+                           Audio_RST_Pin */
+  GPIO_InitStruct.Pin = TMC_2208_DIR_2_Pin|TMC_2208_STEP_2_Pin|TMC_2208_EN_2_Pin|TMC_2208_2_MS1_Pin
+                          |LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
+                          |Audio_RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : HC05_AT_Pin */
-  GPIO_InitStruct.Pin = HC05_AT_Pin;
+  /*Configure GPIO pins : TMC_2208_1_MS1_Pin HC05_AT_Pin */
+  GPIO_InitStruct.Pin = TMC_2208_1_MS1_Pin|HC05_AT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(HC05_AT_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : OTG_FS_OverCurrent_Pin */
-  GPIO_InitStruct.Pin = OTG_FS_OverCurrent_Pin;
+  /*Configure GPIO pins : AMT103_2_B_Pin AMT103_2_A_Pin AMT103_1_B_Pin */
+  GPIO_InitStruct.Pin = AMT103_2_B_Pin|AMT103_2_A_Pin|AMT103_1_B_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(OTG_FS_OverCurrent_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : AMT103_1_A_Pin OTG_FS_OverCurrent_Pin */
+  GPIO_InitStruct.Pin = AMT103_1_A_Pin|OTG_FS_OverCurrent_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
