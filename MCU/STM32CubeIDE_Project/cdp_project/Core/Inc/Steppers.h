@@ -8,12 +8,12 @@
 #ifndef INC_STEPPERS_H_
 #define INC_STEPPERS_H_
 
-void Enable_Steppers(void);
-void Disable_Steppers(void);
-void Direction_Forward(int);
-void Direction_Backward(int);
-void Step(int);
-void Microstep(int, int);
+void TMC2208_Enable(void);
+void TMC2208_Disable(void);
+void TMC2208_Forward(int);
+void TMC2208_Backward(int);
+void TMC2208_Step(int);
+void TMC2208_Microstep(int, int);
 
 
 #endif /* INC_STEPPERS_H_ */
