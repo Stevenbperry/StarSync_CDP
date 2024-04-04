@@ -56,6 +56,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
+void calculateAnglesFromAcceleration(double, double, double, double*, double*);
 /* USER CODE BEGIN PFP */
 void model(ekf_t*, double*);
 void ekf_setup(ekf_t*);
@@ -119,7 +120,23 @@ int main(void)
 	  // Based on modeStatus.currentMode, switch between different operational modes.
 	  switch(modeStatus.currentMode) {
 	      case MODE_POINTING:
-	          // Implement pointing mode operation
+			// Read acceleration data
+			int16_t accelX, accelY, accelZ;
+			BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
+
+			// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
+			double dAccelX = (double)accelX / BMA456_FSR * 9.81;
+			double dAccelY = (double)accelY / BMA456_FSR * 9.81;
+			double dAccelZ = (double)accelZ / BMA456_FSR * 9.81;
+
+			// Calculate angles
+			double altitude, azimuth;
+			calculateAnglesFromAcceleration(dAccelX, dAccelY, dAccelZ, &altitude, &azimuth);
+
+			// Optionally, send these values over UART for debugging
+			char debugMsg[100];
+			sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
+			HAL_UART_Transmit(&huart1, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 	          break;
 	      case MODE_STANDBY:
 	          // Implement standby mode operation
@@ -438,7 +455,15 @@ void model(ekf_t* ekf, double* z) {
         }
     }
 }
-
+/**
+ * @brief Calculates alt az from accel data
+ * @param double accelX, accelY, accelZ: formatted accelerometer data in m/s^2
+ * @param double* altitude, azimuth: pointers that point to the variables where the results will be stored
+ */
+void calculateAnglesFromAcceleration(double accelX, double accelY, double accelZ, double *altitude, double *azimuth) {
+    *altitude = atan2(accelY, sqrt(accelX * accelX + accelZ * accelZ)) * 180.0 / M_PI;
+    *azimuth = atan2(accelX, accelZ) * 180.0 / M_PI;
+}
 /* USER CODE END 4 */
 
 /**
