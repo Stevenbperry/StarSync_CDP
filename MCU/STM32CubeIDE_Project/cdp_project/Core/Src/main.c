@@ -120,32 +120,29 @@ int main(void)
 	  // Based on modeStatus.currentMode, switch between different operational modes.
 	  switch(modeStatus.currentMode) {
 	      case MODE_POINTING:
-			// Read acceleration data
-			int16_t accelX, accelY, accelZ;
-			BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
-
-			// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
-			double dAccelX = (double)accelX / BMA456_FSR * 9.81;
-			double dAccelY = (double)accelY / BMA456_FSR * 9.81;
-			double dAccelZ = (double)accelZ / BMA456_FSR * 9.81;
-
-			// Calculate angles
-			double altitude, azimuth;
-			calculateAnglesFromAcceleration(dAccelX, dAccelY, dAccelZ, &altitude, &azimuth);
-
-			// Optionally, send these values over UART for debugging
-			char debugMsg[100];
-			sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
-			HAL_UART_Transmit(&huart1, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 	          break;
 	      case MODE_STANDBY:
-	          // Implement standby mode operation
+				// Read acceleration data
+				int16_t accelX, accelY, accelZ;
+				BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
+
+				// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
+				double dAccelX = (double)accelX / BMA456_FSR * 9.81;
+				double dAccelY = (double)accelY / BMA456_FSR * 9.81;
+				double dAccelZ = (double)accelZ / BMA456_FSR * 9.81;
+
+				// Calculate angles
+				double altitude, azimuth;
+				calculateAnglesFromAcceleration(dAccelX, dAccelY, dAccelZ, &altitude, &azimuth);
+
+				// Optionally, send these values over UART for debugging
+				char debugMsg[100];
+				sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
+				HAL_UART_Transmit(&huart1, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 	          break;
 	      case MODE_CALIBRATION:
-	          // Implement calibration mode operation
 	          break;
 	      case MODE_HEALTH_CHECK:
-	          // Implement health check mode operation
 	          break;
 	      default:
 	    	    const char msg[] = "Failure to change modes.";
