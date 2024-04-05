@@ -46,6 +46,7 @@ ekf_t ekf;		// ekf object
 uint32_t start, end, elapsed = 0;
 int HC05_flag = -1;
 int pairing_flag = 0;
+char debugMsg[100];
 
 /* USER CODE END PV */
 
@@ -141,7 +142,6 @@ int main(void)
 				calculateAnglesFromAcceleration(filtered, &altitude, &azimuth);
 
 				// Optionally, send these values over UART for debugging
-				char debugMsg[40];
 				sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
 				HAL_UART_Transmit(&huart1, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 	          break;
@@ -150,8 +150,8 @@ int main(void)
 	      case MODE_HEALTH_CHECK:
 	          break;
 	      default:
-	    	    const char msg[] = "Failure to change modes.";
-	    	    HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+				sprintf(debugMsg, "Failure to change modes.\r\n");
+	    	    HAL_UART_Transmit(&huart1, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 	    	    error_flag = 16;
 	    	    Error_Handler();
 	          break;
