@@ -43,9 +43,7 @@ double accel[3] = {0, 0, 0}; 	// accelerometer values
 double filtered[3] = {0, 0, 0}; // filtered values
 uint8_t error_flag;	 // any error that the accelerometer might throw
 ekf_t ekf;		// ekf object
-int inc = 0;
 uint32_t start, end, elapsed = 0;
-uint8_t HC05_data[100];
 int HC05_flag = -1;
 int pairing_flag = 0;
 
@@ -56,11 +54,10 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
-void calculateAnglesFromAcceleration(const double dAccel[3], double *altitude, double *azimuth);
-
 /* USER CODE BEGIN PFP */
 void model(ekf_t*, double*);
 void ekf_setup(ekf_t*);
+void calculateAnglesFromAcceleration(const double accel[3], double *altitude, double *azimuth);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -128,14 +125,13 @@ int main(void)
 				BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
 
 				// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
-				double dAccel[3];
-				dAccel[0] = (double)accelX / BMA456_FSR * 9.80665;
-				dAccel[1] = (double)accelY / BMA456_FSR * 9.80665;
-				dAccel[2] = (double)accelZ / BMA456_FSR * 9.80665;
+				accel[0] = (double)accelX / BMA456_FSR * 9.80665;
+				accel[1] = (double)accelY / BMA456_FSR * 9.80665;
+				accel[2] = (double)accelZ / BMA456_FSR * 9.80665;
 
-				model(&ekf, dAccel);
+				model(&ekf, accel);
 
-				ekf_step(&ekf, dAccel);
+				ekf_step(&ekf, accel);
 
 				filtered[0] = ekf.x[0];
 				filtered[1] = ekf.x[1];
@@ -145,7 +141,7 @@ int main(void)
 				calculateAnglesFromAcceleration(filtered, &altitude, &azimuth);
 
 				// Optionally, send these values over UART for debugging
-				char debugMsg[100];
+				char debugMsg[40];
 				sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
 				HAL_UART_Transmit(&huart1, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 	          break;
@@ -265,7 +261,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 38400;
+  huart1.Init.BaudRate = 9600;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
