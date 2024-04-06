@@ -76,9 +76,7 @@ void BMA456_ReadAccelData(int16_t* accelX, int16_t* accelY, int16_t* accelZ,
         *accelY = (int16_t)(data[2] | data[3] << 8);
         *accelZ = (int16_t)(data[4] | data[5] << 8);
     } else {
-        *accelX = 0xFF;
-        *accelY = 0xFF;
-        *accelZ = 0xFF;
+        Error_Handler();
     }
 }
 /*

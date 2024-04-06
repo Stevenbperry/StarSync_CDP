@@ -45,10 +45,10 @@ uint8_t error_flag;	 // any error that the accelerometer might throw
 ekf_t ekf;		// ekf object
 uint32_t start, end, elapsed = 0;
 double altitude, azimuth;
-int HC05_flag = -1;
+int HC05_flag = 0;
 int pairing_flag = 0;
 char debugMsg[100];
-char command[10];
+char command[1];
 
 HC05_ModeStatus modeStatus = {MODE_STANDBY};
 
@@ -109,6 +109,8 @@ int main(void)
 
   int increment = 0;
 
+  HAL_UART_Receive_IT(&huart2, (uint8_t*) command, 1);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -116,8 +118,14 @@ int main(void)
   while (1)
   {
 	  start = HAL_GetTick();
+	  if(increment > 1500){
+		  increment = 0;
+	  }
 	  // Based on modeStatus.currentMode, switch between different operational modes.
-	  HC05_ProcessCommand(command, &modeStatus, &huart2);
+	  if(HC05_flag==1){
+		  HC05_flag = 0;
+		  HC05_ProcessCommand(command, &modeStatus, &huart2);
+	  }
 	  switch(modeStatus.currentMode) {
 	      case MODE_POINTING:
 	          break;
@@ -142,7 +150,7 @@ int main(void)
 				calculateAnglesFromAcceleration(filtered, &altitude, &azimuth);
 
 				// Optionally, send these values over UART for debugging
-	    	  	if(increment==500){
+	    	  	if(increment==1500){
 					sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
 					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 					increment = 0;
@@ -153,7 +161,7 @@ int main(void)
 	      case MODE_HEALTH_CHECK:
 	          break;
 	      default:
-	    	  	if(increment==500){
+	    	  	if(increment==1500){
 					sprintf(debugMsg, "Failure to change modes.\r\n");
 					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 					increment = 0;
@@ -479,7 +487,7 @@ void calculateAnglesFromAcceleration(const double accel[3], double *altitude, do
  * @brief Retrieves data that was recorded from the interrupt
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-	HAL_UART_Receive_IT(&huart2, (uint8_t*) &command, strlen(command));
+	HAL_UART_Receive_IT(&huart2, (uint8_t*) &command, 1);
 }
 /* USER CODE END 4 */
 

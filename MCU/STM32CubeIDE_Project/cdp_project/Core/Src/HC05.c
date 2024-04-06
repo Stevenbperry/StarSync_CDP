@@ -20,13 +20,13 @@
   */
 void HC05_ProcessCommand(char* command, HC05_ModeStatus* status, UART_HandleTypeDef* huart) {
 	int prev_mode = status->currentMode;
-    if (strcmp(command, "POINTING") == 0) {
+    if (command[0] == 'P') {
         status->currentMode = MODE_POINTING;
-    } else if (strcmp(command, "STANDBY") == 0) {
+    } else if (command[0] == 'S') {
         status->currentMode = MODE_STANDBY;
-    } else if (strcmp(command, "CALIBRATION") == 0) {
+    } else if (command[0] == 'M') {
         status->currentMode = MODE_CALIBRATION;
-    } else if (strcmp(command, "HEALTH") == 0) {
+    } else if (command[0] == 'H') {
         status->currentMode = MODE_HEALTH_CHECK;
     } else {
         status->currentMode = MODE_STANDBY;
