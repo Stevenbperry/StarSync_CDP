@@ -35,7 +35,7 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
-UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
@@ -44,9 +44,13 @@ double filtered[3] = {0, 0, 0}; // filtered values
 uint8_t error_flag;	 // any error that the accelerometer might throw
 ekf_t ekf;		// ekf object
 uint32_t start, end, elapsed = 0;
+double altitude, azimuth;
 int HC05_flag = -1;
 int pairing_flag = 0;
 char debugMsg[100];
+char command[10];
+
+HC05_ModeStatus modeStatus = {MODE_STANDBY};
 
 /* USER CODE END PV */
 
@@ -54,7 +58,7 @@ char debugMsg[100];
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
-static void MX_USART1_UART_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void model(ekf_t*, double*);
 void ekf_setup(ekf_t*);
@@ -96,12 +100,14 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C1_Init();
-  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
   BMA456_Startup(hi2c1);	// initializes the BMA456 accelerometer
 
   ekf_setup(&ekf);
+
+  int increment = 0;
 
   /* USER CODE END 2 */
 
@@ -109,14 +115,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  start = HAL_GetTick();// Define mode status globally or in main()
-	  HC05_ModeStatus modeStatus = {MODE_STANDBY};
-
-	  // Somewhere in your loop or interrupt service routine
-	  char receivedCommand[10]; // Assume commands are received here
-	  HC05_ProcessCommand(receivedCommand, &modeStatus, &huart1);
-
+	  start = HAL_GetTick();
 	  // Based on modeStatus.currentMode, switch between different operational modes.
+	  HC05_ProcessCommand(command, &modeStatus, &huart2);
 	  switch(modeStatus.currentMode) {
 	      case MODE_POINTING:
 	          break;
@@ -138,25 +139,30 @@ int main(void)
 				filtered[1] = ekf.x[1];
 				filtered[2] = ekf.x[2];
 				// Calculate angles
-				double altitude, azimuth;
 				calculateAnglesFromAcceleration(filtered, &altitude, &azimuth);
 
 				// Optionally, send these values over UART for debugging
-				sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
-				HAL_UART_Transmit(&huart1, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+	    	  	if(increment==500){
+					sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
+					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					increment = 0;
+	    	  	}
 	          break;
 	      case MODE_CALIBRATION:
 	          break;
 	      case MODE_HEALTH_CHECK:
 	          break;
 	      default:
-				sprintf(debugMsg, "Failure to change modes.\r\n");
-	    	    HAL_UART_Transmit(&huart1, (uint8_t*)debugMsg, strlen(debugMsg), 100);
-	    	    error_flag = 16;
-	    	    Error_Handler();
+	    	  	if(increment==500){
+					sprintf(debugMsg, "Failure to change modes.\r\n");
+					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					increment = 0;
+					error_flag = 16;
+					Error_Handler();
+	    	  	}
 	          break;
 	  }
-
+	  increment++;
 	  end = HAL_GetTick();
 	  elapsed = end - start;
     /* USER CODE END WHILE */
@@ -246,35 +252,35 @@ static void MX_I2C1_Init(void)
 }
 
 /**
-  * @brief USART1 Initialization Function
+  * @brief USART2 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_USART1_UART_Init(void)
+static void MX_USART2_UART_Init(void)
 {
 
-  /* USER CODE BEGIN USART1_Init 0 */
+  /* USER CODE BEGIN USART2_Init 0 */
 
-  /* USER CODE END USART1_Init 0 */
+  /* USER CODE END USART2_Init 0 */
 
-  /* USER CODE BEGIN USART1_Init 1 */
+  /* USER CODE BEGIN USART2_Init 1 */
 
-  /* USER CODE END USART1_Init 1 */
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 9600;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 9600;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART1_Init 2 */
-  __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
-  /* USER CODE END USART1_Init 2 */
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
 
 }
 
@@ -468,6 +474,12 @@ void calculateAnglesFromAcceleration(const double accel[3], double *altitude, do
 	double accelZ = accel[2];
     *altitude = atan2(accelY, sqrt(accelX * accelX + accelZ * accelZ)) * 180.0 / M_PI;
     *azimuth = atan2(accelX, accelZ) * 180.0 / M_PI;
+}
+/**
+ * @brief Retrieves data that was recorded from the interrupt
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+	HAL_UART_Receive_IT(&huart2, (uint8_t*) &command, strlen(command));
 }
 /* USER CODE END 4 */
 

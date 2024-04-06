@@ -19,6 +19,7 @@
   * @retval None
   */
 void HC05_ProcessCommand(char* command, HC05_ModeStatus* status, UART_HandleTypeDef* huart) {
+	int prev_mode = status->currentMode;
     if (strcmp(command, "POINTING") == 0) {
         status->currentMode = MODE_POINTING;
     } else if (strcmp(command, "STANDBY") == 0) {
@@ -32,9 +33,11 @@ void HC05_ProcessCommand(char* command, HC05_ModeStatus* status, UART_HandleType
     }
 
     // For demonstration, send back the current mode as a confirmation
-    char msg[50];
-    sprintf(msg, "Mode changed: %d\r\n", status->currentMode);
-    HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+    if(prev_mode != status->currentMode){
+		char msg[50];
+		sprintf(msg, "Mode changed: %d\r\n", status->currentMode);
+		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+    }
 }
 
 
