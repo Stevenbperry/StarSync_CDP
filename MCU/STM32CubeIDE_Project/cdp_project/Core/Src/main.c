@@ -118,9 +118,6 @@ int main(void)
   while (1)
   {
 	  start = HAL_GetTick();
-	  if(increment > 1500){
-		  increment = 0;
-	  }
 	  // Based on modeStatus.currentMode, switch between different operational modes.
 	  if(HC05_flag==1){
 		  HC05_flag = 0;
@@ -128,6 +125,11 @@ int main(void)
 	  }
 	  switch(modeStatus.currentMode) {
 	      case MODE_POINTING:
+			 if(increment>=10000000){
+				  sprintf(debugMsg, "Current mode: POINTING\r\n");
+				  HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+				  increment = 0;
+	    	  	}
 	          break;
 	      case MODE_STANDBY:
 				// Read acceleration data
@@ -135,9 +137,9 @@ int main(void)
 				BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
 
 				// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
-				accel[0] = (double)accelX / BMA456_FSR * 9.80665;
-				accel[1] = (double)accelY / BMA456_FSR * 9.80665;
-				accel[2] = (double)accelZ / BMA456_FSR * 9.80665;
+				accel[0] = ((double)accelX / BMA456_FSR * 9.80665) - BMA456_1_X_OFFSET;
+				accel[1] = ((double)accelY / BMA456_FSR * 9.80665) - BMA456_1_Y_OFFSET;
+				accel[2] = ((double)accelZ / BMA456_FSR * 9.80665) - BMA456_1_Z_OFFSET;
 
 				model(&ekf, accel);
 
@@ -150,24 +152,32 @@ int main(void)
 				calculateAnglesFromAcceleration(filtered, &altitude, &azimuth);
 
 				// Optionally, send these values over UART for debugging
-	    	  	if(increment==1500){
+	    	  	if(increment>=1500){
 					sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
 					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 					increment = 0;
 	    	  	}
 	          break;
 	      case MODE_CALIBRATION:
-	          break;
-	      case MODE_HEALTH_CHECK:
-	          break;
-	      default:
-	    	  	if(increment==1500){
-					sprintf(debugMsg, "Failure to change modes.\r\n");
+	    	  	if(increment>=10000000){
+					sprintf(debugMsg, "Current mode: CALIBRATION\r\n");
 					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 					increment = 0;
-					error_flag = 16;
-					Error_Handler();
 	    	  	}
+	          break;
+	      case MODE_HEALTH_CHECK:
+	    	  	if(increment>=10000000){
+					sprintf(debugMsg, "Current mode: HEALTH CHECK\r\n");
+					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					increment = 0;
+	    	  	}
+	          break;
+	      default:
+				sprintf(debugMsg, "Failure to change modes.\r\n");
+				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+				increment = 0;
+				error_flag = 16;
+				Error_Handler();
 	          break;
 	  }
 	  increment++;
@@ -428,13 +438,13 @@ void ekf_setup(ekf_t* ekf){
     }
 
     // Define initial process noise covariance matrix Q
-    double q = 0.1; // example process noise variance
+    double q = 0.01; // example process noise variance
     for (int i = 0; i < Nsta; ++i) {
         ekf->Q[i][i] = q;
     }
 
     // Define initial measurement noise covariance matrix R
-    double r = 0.75; // example measurement noise variance
+    double r = 0.02; // example measurement noise variance
     for (int i = 0; i < Mobs; ++i) {
         ekf->R[i][i] = r;
     }
