@@ -48,7 +48,7 @@ double altitude, azimuth;
 int HC05_flag = 0;
 int pairing_flag = 0;
 char debugMsg[100];
-char command[1];
+char command[12];
 
 HC05_ModeStatus modeStatus = {MODE_STANDBY};
 
@@ -109,7 +109,7 @@ int main(void)
 
   int increment = 0;
 
-  HAL_UART_Receive_IT(&huart2, (uint8_t*) command, 1);
+  HAL_UART_Receive_IT(&huart2, (uint8_t*) command, 12);
 
   /* USER CODE END 2 */
 
@@ -497,7 +497,7 @@ void calculateAnglesFromAcceleration(const double accel[3], double *altitude, do
  * @brief Retrieves data that was recorded from the interrupt
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-	HAL_UART_Receive_IT(&huart2, (uint8_t*) &command, 1);
+	HAL_UART_Receive_IT(&huart2, (uint8_t*) &command, 12);
 }
 /* USER CODE END 4 */
 
