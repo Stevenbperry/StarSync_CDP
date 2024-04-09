@@ -49,6 +49,8 @@ int HC05_flag = 0;
 int pairing_flag = 0;
 char debugMsg[100];
 char command[12];
+volatile uint32_t rxIndex = 0;
+volatile bool messageReady = false;
 
 HC05_ModeStatus modeStatus = {MODE_STANDBY};
 
@@ -109,7 +111,7 @@ int main(void)
 
   int increment = 0;
 
-  HAL_UART_Receive_IT(&huart2, (uint8_t*) command, 12);
+  HAL_UART_Receive_IT(&huart2, (uint8_t*) command, 1);
 
   /* USER CODE END 2 */
 
@@ -119,8 +121,8 @@ int main(void)
   {
 	  start = HAL_GetTick();
 	  // Based on modeStatus.currentMode, switch between different operational modes.
-	  if(HC05_flag==1){
-		  HC05_flag = 0;
+	  if(messageReady==true){
+		  messageReady = false;
 		  HC05_ProcessCommand(command, &modeStatus, &huart2);
 	  }
 	  switch(modeStatus.currentMode) {
@@ -496,8 +498,21 @@ void calculateAnglesFromAcceleration(const double accel[3], double *altitude, do
 /**
  * @brief Retrieves data that was recorded from the interrupt
  */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-	HAL_UART_Receive_IT(&huart2, (uint8_t*) &command, 12);
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+
+	if (command[rxIndex] == '\n') { // Assuming '\n' as the delimiter
+		messageReady = true; // A complete message is ready
+		command[rxIndex] = '\0'; // Null-terminate the message
+		rxIndex = 0; // Reset index for next message
+	} else {
+		rxIndex++; // Prepare for next character
+		if (rxIndex >= 12) {
+			rxIndex = 0; // Prevent buffer overflow
+		}
+	}
+	// Re-enable UART receive interrupt for next byte
+	HAL_UART_Receive_IT(huart, (uint8_t*)&command[rxIndex], 1);
+
 }
 /* USER CODE END 4 */
 
