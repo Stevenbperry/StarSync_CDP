@@ -41,18 +41,21 @@ UART_HandleTypeDef huart2;
 
 double accel[3] = {0, 0, 0}; 	// accelerometer values
 double filtered[3] = {0, 0, 0}; // filtered values
+
 uint8_t error_flag;	 // any error that the accelerometer might throw
 ekf_t ekf;		// ekf object
-uint32_t start, end, elapsed = 0;
-double altitude, azimuth;
-int HC05_flag = 0;
-int pairing_flag = 0;
-char debugMsg[100];
-char command[RX_BUFFER_SIZE];
-volatile uint32_t rxIndex = 0;
-volatile bool messageReady = false;
 
-HC05_ModeStatus modeStatus = {MODE_STANDBY};
+uint32_t start, end, elapsed = 0; // using these to track loop execution time
+
+double altitude, azimuth;	// globally defined variables for alt az so I can track
+
+char debugMsg[100];			// variable to hold messages to be transmitted over UART
+char command[RX_BUFFER_SIZE];	// rx buffer for interrupt reception
+volatile uint32_t rxIndex = 0;	// variable representing what index the next UART byte goes to
+volatile bool messageReady = false;	// when a message is ready, null terminate it, feed it
+									// to HC05_ProcessCommand();
+
+HC05_ModeStatus modeStatus = {MODE_STANDBY};	// current status of the telescope
 
 /* USER CODE END PV */
 
@@ -128,7 +131,7 @@ int main(void)
 	  switch(modeStatus.currentMode) {
 	      case MODE_POINTING:
 			 if(increment>=10000000){
-				  sprintf(debugMsg, "Current mode: POINTING\r\n");
+				  sprintf(debugMsg, "Current mode: POINTING\r\nReference Vector: %f %f\r\n", modeStatus.altitude, modeStatus.azimuth);
 				  HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 				  increment = 0;
 	    	  	}

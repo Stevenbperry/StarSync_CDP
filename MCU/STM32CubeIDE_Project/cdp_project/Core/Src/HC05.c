@@ -23,6 +23,17 @@ void HC05_ProcessCommand(char* command, HC05_ModeStatus* status, UART_HandleType
 	int prev_mode = status->currentMode;
     if (command[0] == 'P') {
         status->currentMode = MODE_POINTING;
+
+        float altitude, azimuth;
+        int parsed = sscanf(command + 1, "%7f%7f", &altitude, &azimuth);
+        if (parsed == 2) {
+            status->altitude = altitude;
+            status->azimuth = azimuth;
+        } else {
+    		sprintf(msg, "Failed to parse altitude and azimuth data.\r\n");
+    		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+        }
+
     } else if (command[0] == 'S') {
         status->currentMode = MODE_STANDBY;
     } else if (command[0] == 'C') {

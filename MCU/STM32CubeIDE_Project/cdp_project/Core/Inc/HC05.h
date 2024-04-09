@@ -17,6 +17,8 @@ typedef enum {
 
 typedef struct {
     SystemMode currentMode;
+    float altitude;	// Altitude of object to point at
+    float azimuth;	// Azimuth of object to point at
 } HC05_ModeStatus;
 
 
