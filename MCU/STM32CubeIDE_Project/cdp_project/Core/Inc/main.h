@@ -39,6 +39,8 @@ extern "C" {
 #include "Quaternion.h"
 #include "HC05.h"
 
+#define RX_BUFFER_SIZE 13 // RX buffer can hold up to 13 bytes
+
 // setup the includes for the EKF
 #define Nsta 3
 #define Mobs 3			// 3 state variables and 3 observations - ax, ay, az

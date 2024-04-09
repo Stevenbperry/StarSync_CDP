@@ -48,7 +48,7 @@ double altitude, azimuth;
 int HC05_flag = 0;
 int pairing_flag = 0;
 char debugMsg[100];
-char command[12];
+char command[RX_BUFFER_SIZE];
 volatile uint32_t rxIndex = 0;
 volatile bool messageReady = false;
 
@@ -506,7 +506,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 		rxIndex = 0; // Reset index for next message
 	} else {
 		rxIndex++; // Prepare for next character
-		if (rxIndex >= 12) {
+		if (rxIndex >= RX_BUFFER_SIZE) {
 			rxIndex = 0; // Prevent buffer overflow
 		}
 	}
