@@ -25,7 +25,7 @@ void HC05_ProcessCommand(char* command, HC05_ModeStatus* status, UART_HandleType
         status->currentMode = MODE_POINTING;
 
         float altitude, azimuth;
-        int parsed = sscanf(command + 1, "%7f%7f", &altitude, &azimuth);
+        int parsed = sscanf(command + 1, "%8f%8f", &altitude, &azimuth);
         if (parsed == 2) {
             status->altitude = altitude;
             status->azimuth = azimuth;

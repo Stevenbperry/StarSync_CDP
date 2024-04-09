@@ -39,7 +39,7 @@ extern "C" {
 #include "Quaternion.h"
 #include "HC05.h"
 
-#define RX_BUFFER_SIZE 15 // RX buffer can hold up to 13 bytes
+#define RX_BUFFER_SIZE 18 // RX buffer can hold up to 13 bytes
 
 // setup the includes for the EKF
 #define Nsta 3
