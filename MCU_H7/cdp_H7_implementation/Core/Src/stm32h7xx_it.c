@@ -42,6 +42,8 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
+extern Telescope_Status modeStatus;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -197,6 +199,141 @@ void SysTick_Handler(void)
 /* For the available peripheral interrupt handler names,                      */
 /* please refer to the startup file (startup_stm32h7xx.s).                    */
 /******************************************************************************/
+
+/**
+  * @brief This function handles EXTI line0 interrupt.
+  */
+void EXTI0_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+	  if (HAL_GPIO_ReadPin(AMT103_2_B_GPIO_Port, AMT103_2_B_Pin) == GPIO_PIN_SET) {
+		  // If A is high, check B's state to determine direction
+		  if (HAL_GPIO_ReadPin(AMT103_2_A_GPIO_Port, AMT103_2_A_Pin) == GPIO_PIN_SET) {
+			  modeStatus.encoder2--;
+		  } else {
+			  modeStatus.encoder2++;
+		  }
+	  } else {
+		  // If A is low, check B's state to determine direction
+		  if (HAL_GPIO_ReadPin(AMT103_2_A_GPIO_Port, AMT103_2_A_Pin) == GPIO_PIN_SET) {
+			  modeStatus.encoder2++;
+		  } else {
+			  modeStatus.encoder2--;
+		  }
+	  }
+
+  /* USER CODE END EXTI0_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(AMT103_2_B_Pin);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+
+  /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line1 interrupt.
+  */
+void EXTI1_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI1_IRQn 0 */
+
+	  if (HAL_GPIO_ReadPin(AMT103_2_A_GPIO_Port, AMT103_2_A_Pin) == GPIO_PIN_SET) {
+		  // If A is high, check B's state to determine direction
+		  if (HAL_GPIO_ReadPin(AMT103_2_B_GPIO_Port, AMT103_2_B_Pin) == GPIO_PIN_SET) {
+			  modeStatus.encoder2--;
+		  } else {
+			  modeStatus.encoder2++;
+		  }
+	  } else {
+		  // If A is low, check B's state to determine direction
+		  if (HAL_GPIO_ReadPin(AMT103_2_B_GPIO_Port, AMT103_2_B_Pin) == GPIO_PIN_SET) {
+			  modeStatus.encoder2++;
+		  } else {
+			  modeStatus.encoder2--;
+		  }
+	  }
+
+  /* USER CODE END EXTI1_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(AMT103_2_A_Pin);
+  /* USER CODE BEGIN EXTI1_IRQn 1 */
+
+  /* USER CODE END EXTI1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line2 interrupt.
+  */
+void EXTI2_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI2_IRQn 0 */
+
+  if (HAL_GPIO_ReadPin(AMT103_1_B_GPIO_Port, AMT103_1_B_Pin) == GPIO_PIN_SET) {
+	  // If A is high, check B's state to determine direction
+	  if (HAL_GPIO_ReadPin(AMT103_1_A_GPIO_Port, AMT103_1_A_Pin) == GPIO_PIN_SET) {
+		  modeStatus.encoder1--;
+	  } else {
+		  modeStatus.encoder1++;
+	  }
+  } else {
+	  // If A is low, check B's state to determine direction
+	  if (HAL_GPIO_ReadPin(AMT103_1_A_GPIO_Port, AMT103_1_A_Pin) == GPIO_PIN_SET) {
+		  modeStatus.encoder1++;
+	  } else {
+		  modeStatus.encoder1--;
+	  }
+  }
+
+
+  /* USER CODE END EXTI2_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(AMT103_1_B_Pin);
+  /* USER CODE BEGIN EXTI2_IRQn 1 */
+
+  /* USER CODE END EXTI2_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line3 interrupt.
+  */
+void EXTI3_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI3_IRQn 0 */
+
+  if (HAL_GPIO_ReadPin(AMT103_1_A_GPIO_Port, AMT103_1_A_Pin) == GPIO_PIN_SET) {
+	  // If A is high, check B's state to determine direction
+	  if (HAL_GPIO_ReadPin(AMT103_1_B_GPIO_Port, AMT103_1_B_Pin) == GPIO_PIN_SET) {
+		  modeStatus.encoder1--;
+	  } else {
+		  modeStatus.encoder1++;
+	  }
+  } else {
+	  // If A is low, check B's state to determine direction
+	  if (HAL_GPIO_ReadPin(AMT103_1_B_GPIO_Port, AMT103_1_B_Pin) == GPIO_PIN_SET) {
+		  modeStatus.encoder1++;
+	  } else {
+		  modeStatus.encoder1--;
+	  }
+  }
+
+  /* USER CODE END EXTI3_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(AMT103_1_A_Pin);
+  /* USER CODE BEGIN EXTI3_IRQn 1 */
+
+  /* USER CODE END EXTI3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line[9:5] interrupts.
+  */
+void EXTI9_5_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
+
+  /* USER CODE END EXTI9_5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(USB_FS_OVCR_Pin);
+  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
+
+  /* USER CODE END EXTI9_5_IRQn 1 */
+}
 
 /**
   * @brief This function handles USART2 global interrupt.

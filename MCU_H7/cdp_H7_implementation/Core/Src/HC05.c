@@ -18,7 +18,7 @@
   * @param UART_HandleTypeDef* huart: The uart channel being used - should be huart1.
   * @retval None
   */
-void HC05_ProcessCommand(char* command, HC05_ModeStatus* status, UART_HandleTypeDef* huart) {
+void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTypeDef* huart) {
 	char msg[50];
 	int prev_mode = status->currentMode;
     if (command[0] == 'P') {
