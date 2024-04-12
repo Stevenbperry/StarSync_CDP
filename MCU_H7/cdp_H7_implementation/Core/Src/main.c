@@ -63,6 +63,8 @@ double BMA456_1_Z_OFFSET = 0;
 
 Telescope_Status modeStatus = {MODE_CALIBRATION, 0, 0, 0, 0};	// initialize the telescope
 
+int increment = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -120,7 +122,6 @@ int main(void)
 
   ekf_setup(&ekf);
 
-  int increment = 0;
 
   HAL_UART_Receive_IT(&huart2, (uint8_t*) command, 1);
 
@@ -147,6 +148,8 @@ int main(void)
 	      case MODE_STANDBY:
 				// Read acceleration data
 				int16_t accelX, accelY, accelZ;
+				uint8_t error_flags = 0;
+				BMA456_ReadErrorFlag(&error_flags, hi2c1);
 				BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
 
 				// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
@@ -198,6 +201,7 @@ int main(void)
 				sprintf(debugMsg, "Calibration complete...\r\n");
 				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 				modeStatus.currentMode = MODE_STANDBY;
+				increment = 0;
 	          break;
 	      case MODE_HEALTH_CHECK:
 	    	  	if(increment>=10000000){
@@ -576,9 +580,6 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
@@ -684,32 +685,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET);
-
-  /* Turns on all the on-board LEDs if there is a critical error */
-	if (error_flag == 1){
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
-	} else if (error_flag == 2){
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-	} else if (error_flag == 4){
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
-	} else if (error_flag == 8){
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
-	} else if (error_flag == 16){
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
-	} else {
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
-	}
-
-  HAL_Delay(10000); // 10 seconds pass and the controller resets
-  HAL_NVIC_SystemReset();
 
   /* USER CODE END Error_Handler_Debug */
 }
