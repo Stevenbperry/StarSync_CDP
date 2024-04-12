@@ -55,7 +55,11 @@ volatile uint32_t rxIndex = 0;	// variable representing what index the next UART
 volatile bool messageReady = false;	// when a message is ready, null terminate it, feed it
 									// to HC05_ProcessCommand();
 
-HC05_ModeStatus modeStatus = {MODE_STANDBY};	// current status of the telescope
+double BMA456_1_X_OFFSET = 0;
+double BMA456_1_Y_OFFSET = 0;
+double BMA456_1_Z_OFFSET = 0;
+
+HC05_ModeStatus modeStatus = {MODE_CALIBRATION};	// current status of the telescope
 
 /* USER CODE END PV */
 
@@ -164,11 +168,32 @@ int main(void)
 	    	  	}
 	          break;
 	      case MODE_CALIBRATION:
-	    	  	if(increment>=10000000){
-					sprintf(debugMsg, "Current mode: CALIBRATION\r\n");
-					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
-					increment = 0;
+	    	  	increment = 0;
+	    	  	while (increment < 10000) {
+					increment++;
+					int16_t accelX, accelY, accelZ;
+					BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
+
+					// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
+					accel[0] = ((double)accelX / BMA456_FSR * 9.80665);
+					accel[1] = ((double)accelY / BMA456_FSR * 9.80665);
+					accel[2] = ((double)accelZ / BMA456_FSR * 9.80665);
+
+
+					model(&ekf, accel);
+
+					ekf_step(&ekf, accel);
+
+					filtered[0] = ekf.x[0];
+					filtered[1] = ekf.x[1];
+					filtered[2] = ekf.x[2];
 	    	  	}
+	    	  	BMA456_1_X_OFFSET = filtered[0] - 0;
+	    	  	BMA456_1_Y_OFFSET = filtered[1] - 0;
+	    	  	BMA456_1_Z_OFFSET = filtered[2] - 9.80556;
+				sprintf(debugMsg, "Calibration complete...\r\n");
+				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+				modeStatus.currentMode = MODE_STANDBY;
 	          break;
 	      case MODE_HEALTH_CHECK:
 	    	  	if(increment>=10000000){
