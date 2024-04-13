@@ -19,19 +19,20 @@
   * @retval None
   */
 void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTypeDef* huart) {
-	char msg[50];
+	char msg[100];
 	int prev_mode = status->currentMode;
     if (command[0] == 'P') {
-        status->currentMode = MODE_POINTING;
-
         float altitude, azimuth;
-        int parsed = sscanf(command + 1, "%8f%8f", &altitude, &azimuth);
+        status->currentMode = MODE_POINTING;  // Move this inside the parsing check
+        int parsed = sscanf(command + 1, "%f%f", &altitude, &azimuth);  // Adjusted format specifiers
         if (parsed == 2) {
             status->altitude = altitude;
             status->azimuth = azimuth;
+            sprintf(msg, "Updated to Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
+            HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
         } else {
-    		sprintf(msg, "Failed to parse altitude and azimuth data.\r\n");
-    		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+            sprintf(msg, "Failed to parse altitude and azimuth data. Previous reference vector unchanged.\r\n");
+            HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
         }
 
     } else if (command[0] == 'S') {
