@@ -59,9 +59,18 @@ double BMA456_1_X_OFFSET = 0;
 double BMA456_1_Y_OFFSET = 0;
 double BMA456_1_Z_OFFSET = 0;
 
-Telescope_Status modeStatus = {MODE_CALIBRATION, 0, 0, 0, 0, 0, 0, 0, 0, 0};	// initialize the telescope
+Telescope_Status modeStatus = {MODE_STANDBY, 0, 0, 0, 0, 0, 0, 0, 0, 0};	// initialize the telescope
 
 int increment = 0;
+															// initialize the magnetometer
+MAGNETO_InitTypeDef initDef = {
+	    .Register1 = LIS3MDL_MAG_OM_XY_ULTRAHIGH | LIS3MDL_MAG_ODR_80_HZ,
+	    .Register2 = LIS3MDL_MAG_FS_4_GA,
+	    .Register3 = LIS3MDL_MAG_CONTINUOUS_MODE,
+	    .Register4 = LIS3MDL_MAG_OM_Z_ULTRAHIGH,
+	    .Register5 = LIS3MDL_MAG_BDU_MSBLSB
+	};
+
 
 /* USER CODE END PV */
 
@@ -117,6 +126,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   BMA456_Startup(hi2c1);	// initializes the BMA456 accelerometer
+  LIS3MDL_MagInit(initDef);	// initializes the LIS3MDL magnetometer
 
   ekf_setup(&ekf);
 
@@ -139,7 +149,7 @@ int main(void)
 	  switch(modeStatus.currentMode) {
 
 	      case MODE_POINTING:
-	    	 float distance_traveled_alt, distance_traveled_az;
+	    	 volatile float distance_traveled_alt, distance_traveled_az, alt_diff, az_diff;
 	    	 if(modeStatus.motor1_en == 0 || modeStatus.motor2_en == 0){
 	    		 TMC2208_Enable();
 	    		 modeStatus.motor1_en = 1;
@@ -149,19 +159,34 @@ int main(void)
 	    	 distance_traveled_az = modeStatus.encoder2 * AMT103_DPP;
 	    	 modeStatus.est_altitude = modeStatus.current_altitude + distance_traveled_alt;
 	    	 modeStatus.est_azimuth = modeStatus.current_azimuth + distance_traveled_az;
-	    	 if(fabs(modeStatus.est_altitude - modeStatus.reference_altitude) >= 1){
-	    		 TMC2208_Step(1);
+	    	 alt_diff = modeStatus.est_altitude - modeStatus.reference_altitude;
+	    	 az_diff = modeStatus.est_azimuth - modeStatus.reference_azimuth;
+	    	 // altitude control
+	    	 if(fabs(alt_diff) >= 1){
+	    		 if(alt_diff < 0){
+	    			 TMC2208_Backward(ALT_MOTOR);
+	    		 } else{
+	    			 TMC2208_Forward(ALT_MOTOR);
+	    		 }
+	    		 TMC2208_Step(ALT_MOTOR);
 	    	 }
-	    	 if(fabs(modeStatus.est_azimuth - modeStatus.reference_azimuth) >= 1){
+	    	 // azimuth control
+	    	 if(fabs(az_diff) >= 1){
+	    		 if(az_diff < 0){
+	    			 TMC2208_Backward(AZ_MOTOR);
+	    		 } else{
+	    			 TMC2208_Forward(AZ_MOTOR);
+	    		 }
 	    		 TMC2208_Step(2);
 	    	 }
 			 if(increment >= 10 ){
+				 // if the telescope isn't moving from the encoder's POV, send debug message and leave pointing
 				 if(distance_traveled_alt == 0 || distance_traveled_az == 0){
 					  sprintf(debugMsg, "ERROR - invalid measured distance traveled from encoders! Exiting pointing mode.\r\n");
 					  HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 					  modeStatus.currentMode = MODE_STANDBY;
 					  increment = 0;
-				 } else{
+				 } else{	// regular reports of how far the scope has traveled
 					  sprintf(debugMsg, "Distance traveled - Altitude: %f | Azimuth: %f\r\n", distance_traveled_alt, distance_traveled_az);
 					  HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 					 increment = 0;
@@ -192,7 +217,7 @@ int main(void)
 				// Calculate angles
 				calculateAnglesFromAcceleration(filtered, (double*) &modeStatus.current_altitude, (double*) &modeStatus.current_azimuth);
 
-				// Optionally, send these values over UART for debugging
+				// Send angles over UART to debug
 	    	  	if(increment>=1500){
 					sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", modeStatus.current_altitude, modeStatus.current_azimuth);
 					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);

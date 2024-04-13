@@ -71,6 +71,7 @@ typedef struct {
 #include "Steppers.h"
 #include "Quaternion.h"
 #include "HC05.h"
+#include "lis3mdl.h"
 
 #include "tiny_ekf_struct.h"
 #include "tiny_ekf.h"
