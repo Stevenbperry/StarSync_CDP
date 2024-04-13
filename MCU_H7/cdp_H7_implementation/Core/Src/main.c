@@ -686,6 +686,8 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
 
+    MX_I2C1_Init(); // Reinitialize I2C peripheral
+
   /* USER CODE END Error_Handler_Debug */
 }
 

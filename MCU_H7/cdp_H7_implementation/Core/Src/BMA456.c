@@ -17,9 +17,9 @@
 
 void BMA456_Startup(I2C_HandleTypeDef serial){
 	/* Starts up the accelerometer, sets to average 128 samples per output */
-
+	HAL_Delay(15);
 	BMA456_Write(0x7E, 0xB6, serial); // CMD: resets the device
-	HAL_Delay(2); // wait 2 ms for sensor to start
+	HAL_Delay(15); // wait 2 ms for sensor to start
 
 	BMA456_Write(0x40, (0x07 << 4) | 0x03, serial); // ACC_CONF: sets to average 128 samples
 	BMA456_Write(0x7D, 0x04, serial); // PWR_CTRL: enables accelerometer

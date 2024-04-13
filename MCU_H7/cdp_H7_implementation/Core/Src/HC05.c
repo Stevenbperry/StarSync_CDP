@@ -21,21 +21,23 @@
 void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTypeDef* huart) {
 	char msg[100];
 	int prev_mode = status->currentMode;
-    if (command[0] == 'P') {
-        float altitude, azimuth;
-        status->currentMode = MODE_POINTING;  // Move this inside the parsing check
-        int parsed = sscanf(command + 1, "%f%f", &altitude, &azimuth);  // Adjusted format specifiers
-        if (parsed == 2) {
-            status->altitude = altitude;
-            status->azimuth = azimuth;
-            sprintf(msg, "Updated to Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
-            HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
-        } else {
-            sprintf(msg, "Failed to parse altitude and azimuth data. Previous reference vector unchanged.\r\n");
-            HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
-        }
+	if (command[0] == 'P') {
+	    float altitude, azimuth;
+	    int parsed = sscanf(command + 1, "%f,%f", &altitude, &azimuth); // Parses the string with a comma as the delimiter
 
-    } else if (command[0] == 'S') {
+	    if (parsed == 2) { // Check if both values were successfully parsed
+	        status->currentMode = MODE_POINTING;  // Update the mode only if parsing is successful
+	        status->altitude = altitude;
+	        status->azimuth = azimuth;
+	        char msg[100];  // Ensure your buffer is large enough to hold the entire message
+	        sprintf(msg, "Updated to Altitude: %f, Azimuth: %f \r\n", altitude, azimuth);
+	        HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+	    } else {
+	        char msg[100];  // Ensure your buffer is large enough to hold the entire message
+	        sprintf(msg, "Failed to parse altitude and azimuth data. Previous reference vector unchanged.\r\n");
+	        HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+	    }
+	}else if (command[0] == 'S') {
         status->currentMode = MODE_STANDBY;
     } else if (command[0] == 'C') {
         status->currentMode = MODE_CALIBRATION;
