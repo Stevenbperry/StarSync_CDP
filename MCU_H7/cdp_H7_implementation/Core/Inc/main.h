@@ -32,6 +32,21 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "stdio.h"
+#include "string.h"
+#include "math.h"
+
+#define RX_BUFFER_SIZE 19 // RX buffer can hold up to 13 bytes
+
+#define ALT_MOTOR 1
+#define AZ_MOTOR 2
+
+#define AMT103_DPP 0.087890625 // Degrees per pulse
+
+// setup the includes for the EKF
+#define Nsta 3
+#define Mobs 3			// 3 state variables and 3 observations - ax, ay, az
+
 typedef enum {
     MODE_POINTING,
     MODE_STANDBY,
@@ -41,28 +56,21 @@ typedef enum {
 
 typedef struct {
     SystemMode currentMode;
-    float altitude;	// Altitude of object to point at
-    float azimuth;	// Azimuth of object to point at
+    float reference_altitude;	// Altitude of object to point at
+    float reference_azimuth;	// Azimuth of object to point at
+    float current_altitude;		// Current telescope altitude
+    float current_azimuth;		// Current telescope azimuth
+    float est_altitude;			// estimated altitude from encoders
+    float est_azimuth;			// estimated azimuth from encoders
     int encoder1; // value of AMT103 1
     int encoder2; // value of AMT103 2
+    int motor1_en;	// 1 if motor is enabled, 0 otherwise
+    int motor2_en;
 } Telescope_Status;
-
-#include "stdio.h"
-#include "string.h"
-#include "math.h"
 #include "BMA456.h"
 #include "Steppers.h"
 #include "Quaternion.h"
 #include "HC05.h"
-
-#define RX_BUFFER_SIZE 19 // RX buffer can hold up to 13 bytes
-
-#define ALT_MOTOR 1
-#define AZ_MOTOR 2
-
-// setup the includes for the EKF
-#define Nsta 3
-#define Mobs 3			// 3 state variables and 3 observations - ax, ay, az
 
 #include "tiny_ekf_struct.h"
 #include "tiny_ekf.h"

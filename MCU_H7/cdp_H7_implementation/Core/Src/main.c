@@ -49,8 +49,6 @@ ekf_t ekf;		// ekf object
 
 uint32_t start, end, elapsed = 0; // using these to track loop execution time
 
-double altitude, azimuth;	// globally defined variables for alt az so I can track
-
 char debugMsg[100];			// variable to hold messages to be transmitted over UART
 char command[RX_BUFFER_SIZE];	// rx buffer for interrupt reception
 volatile uint32_t rxIndex = 0;	// variable representing what index the next UART byte goes to
@@ -61,7 +59,7 @@ double BMA456_1_X_OFFSET = 0;
 double BMA456_1_Y_OFFSET = 0;
 double BMA456_1_Z_OFFSET = 0;
 
-Telescope_Status modeStatus = {MODE_CALIBRATION, 0, 0, 0, 0};	// initialize the telescope
+Telescope_Status modeStatus = {MODE_CALIBRATION, 0, 0, 0, 0, 0, 0, 0, 0, 0};	// initialize the telescope
 
 int increment = 0;
 
@@ -137,14 +135,41 @@ int main(void)
 		  messageReady = false;
 		  HC05_ProcessCommand(command, &modeStatus, &huart2);
 	  }
+
 	  switch(modeStatus.currentMode) {
+
 	      case MODE_POINTING:
-			 if(increment>=10000000){
-				  sprintf(debugMsg, "Current mode: POINTING\r\nReference Vector: %f %f\r\n", modeStatus.altitude, modeStatus.azimuth);
-				  HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
-				  increment = 0;
+	    	 float distance_traveled_alt, distance_traveled_az;
+	    	 if(modeStatus.motor1_en == 0 || modeStatus.motor2_en == 0){
+	    		 TMC2208_Enable();
+	    		 modeStatus.motor1_en = 1;
+	    		 modeStatus.motor2_en = 1;
+	    	 }
+	    	 distance_traveled_alt = modeStatus.encoder1 * AMT103_DPP;
+	    	 distance_traveled_az = modeStatus.encoder2 * AMT103_DPP;
+	    	 modeStatus.est_altitude = modeStatus.current_altitude + distance_traveled_alt;
+	    	 modeStatus.est_azimuth = modeStatus.current_azimuth + distance_traveled_az;
+	    	 if(fabs(modeStatus.est_altitude - modeStatus.reference_altitude) >= 1){
+	    		 TMC2208_Step(1);
+	    	 }
+	    	 if(fabs(modeStatus.est_azimuth - modeStatus.reference_azimuth) >= 1){
+	    		 TMC2208_Step(2);
+	    	 }
+			 if(increment >= 10 ){
+				 if(distance_traveled_alt == 0 || distance_traveled_az == 0){
+					  sprintf(debugMsg, "ERROR - invalid measured distance traveled from encoders! Exiting pointing mode.\r\n");
+					  HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					  modeStatus.currentMode = MODE_STANDBY;
+					  increment = 0;
+				 } else{
+					  sprintf(debugMsg, "Distance traveled - Altitude: %f | Azimuth: %f\r\n", distance_traveled_alt, distance_traveled_az);
+					  HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					 increment = 0;
+				 }
+				 increment = 0;
 	    	  	}
 	          break;
+
 	      case MODE_STANDBY:
 				// Read acceleration data
 				int16_t accelX, accelY, accelZ;
@@ -165,15 +190,16 @@ int main(void)
 				filtered[1] = ekf.x[1];
 				filtered[2] = ekf.x[2];
 				// Calculate angles
-				calculateAnglesFromAcceleration(filtered, &altitude, &azimuth);
+				calculateAnglesFromAcceleration(filtered, (double*) &modeStatus.current_altitude, (double*) &modeStatus.current_azimuth);
 
 				// Optionally, send these values over UART for debugging
 	    	  	if(increment>=1500){
-					sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", altitude, azimuth);
+					sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", modeStatus.current_altitude, modeStatus.current_azimuth);
 					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 					increment = 0;
 	    	  	}
 	          break;
+
 	      case MODE_CALIBRATION:
 	    	  	increment = 0;
 	    	  	while (increment < 10000) {
@@ -203,6 +229,7 @@ int main(void)
 				modeStatus.currentMode = MODE_STANDBY;
 				increment = 0;
 	          break;
+
 	      case MODE_HEALTH_CHECK:
 	    	  	if(increment>=10000000){
 					sprintf(debugMsg, "Current mode: HEALTH CHECK\r\n");
@@ -210,15 +237,21 @@ int main(void)
 					increment = 0;
 	    	  	}
 	          break;
+
 	      default:
 				sprintf(debugMsg, "Failure to change modes.\r\n");
 				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 				increment = 0;
-				error_flag = 16;
-				Error_Handler();
 	          break;
+
 	  }
 	  increment++;
+	  // Disable the motors if we aren't in pointing mode.
+ 	 if(modeStatus.currentMode != MODE_POINTING){
+ 		 TMC2208_Disable();
+ 		 modeStatus.motor1_en = 0;
+ 		 modeStatus.motor2_en = 0;
+ 	 }
 
 	  elapsed = HAL_GetTick() - start;	// execution time of main loop in milliseconds
     /* USER CODE END WHILE */

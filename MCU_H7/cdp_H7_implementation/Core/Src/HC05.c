@@ -27,8 +27,8 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
 
 	    if (parsed == 2) { // Check if both values were successfully parsed
 	        status->currentMode = MODE_POINTING;  // Update the mode only if parsing is successful
-	        status->altitude = altitude;
-	        status->azimuth = azimuth;
+	        status->reference_altitude = altitude;
+	        status->reference_azimuth = azimuth;
 	        char msg[100];  // Ensure your buffer is large enough to hold the entire message
 	        sprintf(msg, "Updated to Altitude: %f, Azimuth: %f \r\n", altitude, azimuth);
 	        HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
