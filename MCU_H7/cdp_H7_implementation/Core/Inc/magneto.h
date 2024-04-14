@@ -93,7 +93,7 @@ typedef struct
   void      (*ClearIT)(void);
   void      (*FilterConfig)(uint8_t);
   void      (*FilterCmd)(uint8_t);
-  void      (*GetXYZ)(int16_t *);
+  void      (*GetXYZ)(float *);
 }MAGNETO_DrvTypeDef;
 /**
   * @}

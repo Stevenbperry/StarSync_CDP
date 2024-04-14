@@ -19,8 +19,8 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "lis3mdl.h"
 #include "main.h"
+#include "lis3mdl.h"
 
 extern I2C_HandleTypeDef hi2c1;
 
@@ -62,6 +62,19 @@ MAGNETO_DrvTypeDef Lis3mdlMagDrv =
 /** @defgroup LIS3MDL_Mag_Private_Functions LIS3MDL Mag Private Functions
   * @{
   */
+
+void Magnetic_Calibration(UART_HandleTypeDef* huart){
+	int increment = 0;
+	while(increment <= 1000){
+		volatile float data[3];
+		char buffer[64];
+		LIS3MDL_MagReadXYZ((float*) &data);
+        snprintf(buffer, sizeof(buffer), "%f,%f,%f\r\n", data[0], data[1], data[2]);
+        HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 100);
+		HAL_Delay(12);
+		increment++;
+	}
+}
 
 void SENSOR_IO_Write(uint8_t Addr, uint8_t Reg, uint8_t Value)
 {
@@ -161,7 +174,7 @@ void LIS3MDL_MagLowPower(uint16_t status)
   * @brief  Read X, Y & Z Magnetometer values 
   * @param  pData: Data out pointer
   */
-void LIS3MDL_MagReadXYZ(int16_t* pData)
+void LIS3MDL_MagReadXYZ(float* pData)
 {
   int16_t pnRawData[3];
   uint8_t ctrlm= 0;
@@ -201,7 +214,7 @@ void LIS3MDL_MagReadXYZ(int16_t* pData)
   /* Obtain the mGauss value for the three axis */
   for(i=0; i<3; i++)
   {
-    pData[i]=( int16_t )(pnRawData[i] * sensitivity);
+    pData[i]= (pnRawData[i] * sensitivity);
   }
 }
 

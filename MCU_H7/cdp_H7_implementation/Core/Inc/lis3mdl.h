@@ -163,7 +163,8 @@ void LIS3MDL_MagInit(MAGNETO_InitTypeDef LIS3MDL_InitStruct);
 void LIS3MDL_MagDeInit(void);
 uint8_t LIS3MDL_MagReadID(void);
 void LIS3MDL_MagLowPower(uint16_t status);
-void LIS3MDL_MagReadXYZ(int16_t* pData);
+void LIS3MDL_MagReadXYZ(float* pData);
+void Magnetic_Calibration(UART_HandleTypeDef*);
 
 /**
   * @}
