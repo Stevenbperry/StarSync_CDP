@@ -56,12 +56,12 @@ typedef enum {
 
 typedef struct {
     SystemMode currentMode;
-    float reference_altitude;	// Altitude of object to point at
-    float reference_azimuth;	// Azimuth of object to point at
-    float current_altitude;		// Current telescope altitude
-    float current_azimuth;		// Current telescope azimuth
-    float est_altitude;			// estimated altitude from encoders
-    float est_azimuth;			// estimated azimuth from encoders
+    double reference_altitude;	// Altitude of object to point at
+    double reference_azimuth;	// Azimuth of object to point at
+    double current_altitude;		// Current telescope altitude
+    double current_azimuth;		// Current telescope azimuth
+    double est_altitude;			// estimated altitude from encoders
+    double est_azimuth;			// estimated azimuth from encoders
     int encoder1; // value of AMT103 1
     int encoder2; // value of AMT103 2
     int motor1_en;	// 1 if motor is enabled, 0 otherwise

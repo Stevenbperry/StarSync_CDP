@@ -203,9 +203,9 @@ int main(void)
 				BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
 
 				// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
-				accel[0] = ((double)accelX / BMA456_FSR * 9.80665) - BMA456_1_X_OFFSET;
-				accel[1] = ((double)accelY / BMA456_FSR * 9.80665) - BMA456_1_Y_OFFSET;
-				accel[2] = ((double)accelZ / BMA456_FSR * 9.80665) - BMA456_1_Z_OFFSET;
+				accel[0] = ((double)accelX / BMA456_FSR * 9.80665) - BMA456_X_OFFSET;
+				accel[1] = -1 * ((double)accelZ / BMA456_FSR * 9.80665) - BMA456_Z_OFFSET;
+				accel[2] = ((double)accelY / BMA456_FSR * 9.80665) - BMA456_Y_OFFSET;
 
 				model(&ekf, accel);
 
@@ -215,7 +215,7 @@ int main(void)
 				filtered[1] = ekf.x[1];
 				filtered[2] = ekf.x[2];
 				// Calculate angles
-				calculateAnglesFromAcceleration(filtered, (double*) &modeStatus.current_altitude, (double*) &modeStatus.current_azimuth);
+				calculateAnglesFromAcceleration(filtered, &modeStatus.current_altitude, &modeStatus.current_azimuth);
 
 				// Send angles over UART to debug
 	    	  	if(increment>=1500){
@@ -709,11 +709,11 @@ void model(ekf_t* ekf, double* z) {
  * @param double* altitude, azimuth: pointers that point to the variables where the results will be stored
  */
 void calculateAnglesFromAcceleration(const double accel[3], double *altitude, double *azimuth) {
-	double accelX = accel[0];
-	double accelY = accel[1];
-	double accelZ = accel[2];
-    *altitude = atan2(accelY, sqrt(accelX * accelX + accelZ * accelZ)) * 180.0 / M_PI;
-    *azimuth = atan2(accelX, accelZ) * 180.0 / M_PI;
+
+    *altitude = asin(accel[0] / sqrt(accel[0] * accel[0] + accel[1] * accel[1] + accel[2] * accel[2])) * (180 / M_PI);
+    *azimuth = 0;
+
+
 }
 /**
  * @brief Retrieves data that was recorded from the interrupt
