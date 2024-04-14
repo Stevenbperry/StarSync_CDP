@@ -62,6 +62,9 @@ typedef struct {
     double current_azimuth;		// Current telescope azimuth
     double est_altitude;			// estimated altitude from encoders
     double est_azimuth;			// estimated azimuth from encoders
+    float ref_mag_x;
+    float ref_mag_y;
+    float ref_mag_z;
     int encoder1; // value of AMT103 1
     int encoder2; // value of AMT103 2
     int motor1_en;	// 1 if motor is enabled, 0 otherwise

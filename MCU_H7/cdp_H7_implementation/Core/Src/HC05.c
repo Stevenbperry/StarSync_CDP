@@ -29,11 +29,9 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
 	        status->currentMode = MODE_POINTING;  // Update the mode only if parsing is successful
 	        status->reference_altitude = altitude;
 	        status->reference_azimuth = azimuth;
-	        char msg[100];  // Ensure your buffer is large enough to hold the entire message
 	        sprintf(msg, "Updated to Altitude: %f, Azimuth: %f \r\n", altitude, azimuth);
 	        HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
 	    } else {
-	        char msg[100];  // Ensure your buffer is large enough to hold the entire message
 	        sprintf(msg, "Failed to parse altitude and azimuth data. Previous reference vector unchanged.\r\n");
 	        HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
 	    }
@@ -43,6 +41,20 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
         status->currentMode = MODE_CALIBRATION;
     } else if (command[0] == 'H') {
         status->currentMode = MODE_HEALTH_CHECK;
+    } else if (command[0] == 'M') {
+    	float mag_x, mag_y, mag_z;
+	    int parsed = sscanf(command + 1, "%f,%f,%f", &mag_x, &mag_y, &mag_z); // Parses the string with a comma as the delimiter
+
+	    if (parsed == 2) { // Check if both values were successfully parsed
+	        status->ref_mag_x = mag_x;
+	        status->ref_mag_y = mag_y;
+	        status->ref_mag_z = mag_z;
+	        sprintf(msg, "Updated to X: %f, Y: %f Z: %f\r\n", mag_x, mag_y, mag_z);
+	        HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+	    } else {
+	        sprintf(msg, "Failed to parse magnetic field data. Previous reference vector unchanged.\r\n");
+	        HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+	    }
     } else {
 		sprintf(msg, "Unknown mode change - no action taken\r\n");
 		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
@@ -51,6 +63,9 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
     // For demonstration, send back the current mode as a confirmation
     if(prev_mode != status->currentMode){
 		sprintf(msg, "Mode changed: %d\r\n", status->currentMode);
+		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+    }else{
+		sprintf(msg, "Mode unchanged.\r\n");
 		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
     }
 }
