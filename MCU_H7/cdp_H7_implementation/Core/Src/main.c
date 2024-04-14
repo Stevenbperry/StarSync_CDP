@@ -59,7 +59,22 @@ double BMA456_1_X_OFFSET = 0;
 double BMA456_1_Y_OFFSET = 0;
 double BMA456_1_Z_OFFSET = 0;
 
-Telescope_Status modeStatus = {MODE_STANDBY, 0, 0, 0, 0, 0, 0, 0, 0, 0};	// initialize the telescope
+Telescope_Status modeStatus =  {.currentMode = MODE_STANDBY,
+								.reference_altitude = 0,
+								.reference_azimuth = 0,
+								.current_altitude = 0,
+								.current_azimuth = 0,
+							    .est_altitude = 0,
+							    .est_azimuth = 0,
+							    .ref_mag_x = 0,
+							    .ref_mag_y = 0,
+							    .current_mag_x = 0,
+								.current_mag_y = 0,
+								.current_mag_z = 0,
+							    .encoder1 = 0,
+								.encoder2 = 0,
+							    .motor1_en = 0,
+							    .motor2_en = 0}; // initialize the telescope
 
 int increment = 0;
 															// initialize the magnetometer
