@@ -55,9 +55,10 @@ volatile uint32_t rxIndex = 0;	// variable representing what index the next UART
 volatile bool messageReady = false;	// when a message is ready, null terminate it, feed it
 									// to HC05_ProcessCommand();
 
-double BMA456_1_X_OFFSET = 0;
-double BMA456_1_Y_OFFSET = 0;
-double BMA456_1_Z_OFFSET = 0;
+
+double BMA456_X_OFFSET = DEFAULT_BMA456_X_OFFSET;
+double BMA456_Y_OFFSET = DEFAULT_BMA456_Y_OFFSET;
+double BMA456_Z_OFFSET = DEFAULT_BMA456_Z_OFFSET;
 
 Telescope_Status modeStatus =  {.currentMode = MODE_STANDBY,
 								.reference_altitude = 0,
@@ -242,7 +243,7 @@ int main(void)
 	          break;
 
 	      case MODE_CALIBRATION:
-	    	  	/*increment = 0;
+	    	  	increment = 0;
 	    	  	while (increment < 10000) {
 					increment++;
 					int16_t accelX, accelY, accelZ;
@@ -262,13 +263,13 @@ int main(void)
 					filtered[1] = ekf.x[1];
 					filtered[2] = ekf.x[2];
 	    	  	}
-	    	  	BMA456_1_X_OFFSET = filtered[0] - 0;
-	    	  	BMA456_1_Y_OFFSET = filtered[1] - 0;
-	    	  	BMA456_1_Z_OFFSET = filtered[2] - 9.80556;
+	    	  	BMA456_X_OFFSET = filtered[0] - 0;
+	    	  	BMA456_Y_OFFSET = filtered[1] - 0;
+	    	  	BMA456_Z_OFFSET = filtered[2] - 9.80556;
 				sprintf(debugMsg, "Calibration complete...\r\n");
 				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 				modeStatus.currentMode = MODE_STANDBY;
-				increment = 0;*/
+				increment = 0;
 	    	    Magnetic_Calibration(&huart2);
 	          break;
 
