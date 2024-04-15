@@ -242,7 +242,7 @@ int main(void)
 	          break;
 
 	      case MODE_CALIBRATION:
-	    	  	increment = 0;
+	    	  	/*increment = 0;
 	    	  	while (increment < 10000) {
 					increment++;
 					int16_t accelX, accelY, accelZ;
@@ -268,7 +268,8 @@ int main(void)
 				sprintf(debugMsg, "Calibration complete...\r\n");
 				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 				modeStatus.currentMode = MODE_STANDBY;
-				increment = 0;
+				increment = 0;*/
+	    	    Magnetic_Calibration(&huart2);
 	          break;
 
 	      case MODE_HEALTH_CHECK:
