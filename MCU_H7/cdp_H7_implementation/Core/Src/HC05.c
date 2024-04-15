@@ -42,14 +42,15 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
     } else if (command[0] == 'H') {
         status->currentMode = MODE_HEALTH_CHECK;
     } else if (command[0] == 'M') {
-    	float mag_x, mag_y, mag_z;
-	    int parsed = sscanf(command + 1, "%f,%f,%f", &mag_x, &mag_y, &mag_z); // Parses the string with a comma as the delimiter
+    	float mag_x, mag_y, mag_z, dec;
+	    int parsed = sscanf(command + 1, "%f,%f,%f,%f", &mag_x, &mag_y, &mag_z, &dec); // Parses the string with a comma as the delimiter
 
-	    if (parsed == 2) { // Check if both values were successfully parsed
+	    if (parsed == 4) { // Check if both values were successfully parsed
 	        status->ref_mag_x = mag_x;
 	        status->ref_mag_y = mag_y;
 	        status->ref_mag_z = mag_z;
-	        sprintf(msg, "Updated to X: %f, Y: %f Z: %f\r\n", mag_x, mag_y, mag_z);
+	        status->ref_dec = dec;
+	        sprintf(msg, "Updated to X: %f, Y: %f Z: %f DEC: %f\r\n", mag_x, mag_y, mag_z, dec);
 	        HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
 	    } else {
 	        sprintf(msg, "Failed to parse magnetic field data. Previous reference vector unchanged.\r\n");

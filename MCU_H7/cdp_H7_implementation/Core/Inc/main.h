@@ -36,7 +36,7 @@ extern "C" {
 #include "string.h"
 #include "math.h"
 
-#define RX_BUFFER_SIZE 35 // RX buffer can hold up to 13 bytes
+#define RX_BUFFER_SIZE 50 // RX buffer can hold up to 13 bytes
 
 #define ALT_MOTOR 1
 #define AZ_MOTOR 2
@@ -65,6 +65,7 @@ typedef struct {
     float ref_mag_x;
     float ref_mag_y;				// reference magnetic field vector sent from phone
     float ref_mag_z;
+    float ref_dec;
     float current_mag_x;
     float current_mag_y;			// measured magnetic field vector from magnetometers
     float current_mag_z;
