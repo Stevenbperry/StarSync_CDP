@@ -74,14 +74,15 @@ typedef struct {
     int motor1_en;	// 1 if motor is enabled, 0 otherwise
     int motor2_en;
 } Telescope_Status;
+
+#include "tiny_ekf_struct.h"
+#include "tiny_ekf.h"
+
 #include "BMA456.h"
 #include "Steppers.h"
 #include "Quaternion.h"
 #include "HC05.h"
 #include "lis3mdl.h"
-
-#include "tiny_ekf_struct.h"
-#include "tiny_ekf.h"
 
 /* USER CODE END Includes */
 
@@ -102,6 +103,8 @@ typedef struct {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
+void model(ekf_t*, double*);
+void ekf_setup(ekf_t*);
 
 /* USER CODE BEGIN EFP */
 

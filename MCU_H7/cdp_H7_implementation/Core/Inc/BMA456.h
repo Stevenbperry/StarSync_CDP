@@ -16,6 +16,9 @@
 #define DEFAULT_BMA456_Y_OFFSET 0.12330147682959214
 #define DEFAULT_BMA456_Z_OFFSET -0.033625869273338438
 
+#include "main.h"
+
+void BMA456_Calibration(I2C_HandleTypeDef, double*, double*, double*, ekf_t);
 void BMA456_Write(uint8_t, uint8_t, I2C_HandleTypeDef);
 HAL_StatusTypeDef BMA456_Read(uint8_t, uint8_t*, uint16_t*, I2C_HandleTypeDef);
 void BMA456_ReadAccelData(int16_t*, int16_t*, int16_t*, I2C_HandleTypeDef);

@@ -10,6 +10,34 @@
 
 #include "main.h"
 
+void BMA456_Calibration(I2C_HandleTypeDef serial, double* xCal, double* yCal, double* zCal, ekf_t ekf){
+
+  	int increment = 0;
+	double accel[3], filtered[3];
+  	while (increment < 10000) {
+		increment++;
+		int16_t accelX, accelY, accelZ;
+		BMA456_ReadAccelData(&accelX, &accelY, &accelZ, serial);
+
+		// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
+		accel[0] = ((double)accelX / BMA456_FSR * 9.80665);
+		accel[1] = ((double)accelY / BMA456_FSR * 9.80665);
+		accel[2] = ((double)accelZ / BMA456_FSR * 9.80665);
+
+
+		model(&ekf, accel);
+
+		ekf_step(&ekf, accel);
+
+		filtered[0] = ekf.x[0];
+		filtered[1] = ekf.x[1];
+		filtered[2] = ekf.x[2];
+  	}
+  	*xCal = filtered[0] - 0;
+  	*yCal = filtered[1] - 0;
+  	*zCal = filtered[2] - 9.80556;
+}
+
 /*
  * @param I2C_HandleTypeDef serial: the serial line being used (like hi2c1)
  *

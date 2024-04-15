@@ -98,8 +98,6 @@ static void MX_USART3_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-void model(ekf_t*, double*);
-void ekf_setup(ekf_t*);
 void calculateAnglesFromAcceleration(const double accel[3], double *altitude, double *azimuth);
 /* USER CODE END PFP */
 
@@ -243,34 +241,11 @@ int main(void)
 	          break;
 
 	      case MODE_CALIBRATION:
-	    	  	increment = 0;
-	    	  	while (increment < 10000) {
-					increment++;
-					int16_t accelX, accelY, accelZ;
-					BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
-
-					// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
-					accel[0] = ((double)accelX / BMA456_FSR * 9.80665);
-					accel[1] = ((double)accelY / BMA456_FSR * 9.80665);
-					accel[2] = ((double)accelZ / BMA456_FSR * 9.80665);
-
-
-					model(&ekf, accel);
-
-					ekf_step(&ekf, accel);
-
-					filtered[0] = ekf.x[0];
-					filtered[1] = ekf.x[1];
-					filtered[2] = ekf.x[2];
-	    	  	}
-	    	  	BMA456_X_OFFSET = filtered[0] - 0;
-	    	  	BMA456_Y_OFFSET = filtered[1] - 0;
-	    	  	BMA456_Z_OFFSET = filtered[2] - 9.80556;
+	    	  	BMA456_Calibration(hi2c1, &BMA456_X_OFFSET, &BMA456_Y_OFFSET, &BMA456_Z_OFFSET, ekf);
+	    	    Magnetic_Calibration(&huart2);
 				sprintf(debugMsg, "Calibration complete...\r\n");
 				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 				modeStatus.currentMode = MODE_STANDBY;
-				increment = 0;
-	    	    Magnetic_Calibration(&huart2);
 	          break;
 
 	      case MODE_HEALTH_CHECK:

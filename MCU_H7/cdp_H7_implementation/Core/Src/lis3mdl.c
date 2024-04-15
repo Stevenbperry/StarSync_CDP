@@ -65,7 +65,7 @@ MAGNETO_DrvTypeDef Lis3mdlMagDrv =
 
 void Magnetic_Calibration(UART_HandleTypeDef* huart){
 	int increment = 0;
-	while(increment <= 1000){
+	while(increment <= 100){
 		volatile float data[3];
 		char buffer[64];
 		LIS3MDL_MagReadXYZ((float*) &data);
