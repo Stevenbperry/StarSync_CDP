@@ -48,8 +48,8 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
 
     	}else if (command[1] == 'F'){
     		// Update magnetometer constants (F for finished)
-    		float H[3][3];  // Hard iron matrix
-    		float S[3];     // Scale factors
+    		float S[3][3];  // Hard iron matrix
+    		float H[3];     // Scale factors
     	    char* token;
     	    int index = 0;
     	    command += 2;
@@ -62,9 +62,9 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
     	        if (index < 9) {  // First 9 tokens are matrix entries
     	            int row = index / 3;
     	            int col = index % 3;
-    	            sscanf(token, "%f", &H[row][col]);
+    	            sscanf(token, "%f", &S[row][col]);
     	        } else if (index < 12) {  // Next 3 tokens are scale factors
-    	            sscanf(token, "%f", &S[index - 9]);
+    	            sscanf(token, "%f", &H[index - 9]);
     	        }
 
     	        token = strtok(NULL, ",");

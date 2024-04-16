@@ -223,22 +223,25 @@ int main(void)
 				unfiltered[0] = ((double)accelX / BMA456_FSR * 9.80665) - BMA456_X_OFFSET;
 				unfiltered[1] = -1 * (((double)accelZ / BMA456_FSR * 9.80665) - BMA456_Z_OFFSET);
 				unfiltered[2] = ((double)accelY / BMA456_FSR * 9.80665) - BMA456_Y_OFFSET;
-				unfiltered[3] = mag[3];
-				unfiltered[4] = mag[4];
-				unfiltered[5] = mag[5];
+
+				// Apply hard and soft iron correction to magnetometer data
+				for (int i = 0; i < 3; i++) {
+				    unfiltered[i + 3] = 0; // Start with zero for magnetometer corrected data
+				    for (int j = 0; j < 3; j++) {
+				        unfiltered[i + 3] += modeStatus.soft_iron[i][j] * (mag[j] - modeStatus.hard_iron[j]);
+				    }
+				}
 
 				model(&ekf, unfiltered);
 
 				ekf_step(&ekf, unfiltered);
 
-				filtered[0] = ekf.x[0];
-				filtered[1] = ekf.x[1];
-				filtered[2] = ekf.x[2];
-				filtered[3] = ekf.x[3];
-				filtered[4] = ekf.x[4];
-				filtered[5] = ekf.x[5];
+				for (int i = 0; i < Nsta; i++) {
+				    filtered[i] = ekf.x[i];
+				}
 				// Calculate angles
 				calculateAnglesFromAcceleration(filtered, &modeStatus.current_altitude, &modeStatus.current_azimuth);
+				modeStatus.current_azimuth = modeStatus.current_azimuth + modeStatus.ref_dec;
 
 				// Send angles over UART to debug
 	    	  	if(increment>=1500){
@@ -713,8 +716,6 @@ void model(ekf_t* ekf, double* z) {
 }
 /**
  * @brief Calculates alt az from accel data
- * @param double accelX, accelY, accelZ: formatted accelerometer data in m/s^2
- * @param double* altitude, azimuth: pointers that point to the variables where the results will be stored
  */
 void calculateAnglesFromAcceleration(const double data[6], double *altitude, double *azimuth) {
 
