@@ -13,7 +13,8 @@
 void BMA456_Calibration(I2C_HandleTypeDef serial, double* xCal, double* yCal, double* zCal, ekf_t ekf){
 
   	int increment = 0;
-	double accel[3], filtered[3];
+	double accel[3];
+	double filtered[6] = {0, 0, 0, 0, 0, 0};
   	while (increment < 10000) {
 		increment++;
 		int16_t accelX, accelY, accelZ;
@@ -32,6 +33,11 @@ void BMA456_Calibration(I2C_HandleTypeDef serial, double* xCal, double* yCal, do
 		filtered[0] = ekf.x[0];
 		filtered[1] = ekf.x[1];
 		filtered[2] = ekf.x[2];
+		filtered[3] = ekf.x[3];
+		filtered[4] = ekf.x[4];
+		filtered[5] = ekf.x[5];
+
+
   	}
   	*xCal = filtered[0] - 0;
   	*yCal = filtered[1] - 0;

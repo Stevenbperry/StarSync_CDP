@@ -41,8 +41,8 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 
-double accel[3] = {0, 0, 0}; 	// accelerometer values
-double filtered[3] = {0, 0, 0}; // filtered values
+double unfiltered[6]; 	// accelerometer values
+double filtered[6]; // filtered values
 
 uint8_t error_flag;	 // any error that the accelerometer might throw
 ekf_t ekf;		// ekf object
@@ -98,7 +98,7 @@ static void MX_USART3_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-void calculateAnglesFromAcceleration(const double accel[3], double *altitude, double *azimuth);
+void calculateAnglesFromAcceleration(const double data[6], double *altitude, double *azimuth);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -213,22 +213,30 @@ int main(void)
 	      case MODE_STANDBY:
 				// Read acceleration data
 				int16_t accelX, accelY, accelZ;
+				float mag[3];
 				uint8_t error_flags = 0;
 				BMA456_ReadErrorFlag(&error_flags, hi2c1);
 				BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
+				LIS3MDL_MagReadXYZ((float*) &mag);
 
 				// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
-				accel[0] = ((double)accelX / BMA456_FSR * 9.80665) - BMA456_X_OFFSET;
-				accel[1] = -1 * (((double)accelZ / BMA456_FSR * 9.80665) - BMA456_Z_OFFSET);
-				accel[2] = ((double)accelY / BMA456_FSR * 9.80665) - BMA456_Y_OFFSET;
+				unfiltered[0] = ((double)accelX / BMA456_FSR * 9.80665) - BMA456_X_OFFSET;
+				unfiltered[1] = -1 * (((double)accelZ / BMA456_FSR * 9.80665) - BMA456_Z_OFFSET);
+				unfiltered[2] = ((double)accelY / BMA456_FSR * 9.80665) - BMA456_Y_OFFSET;
+				unfiltered[3] = mag[3];
+				unfiltered[4] = mag[4];
+				unfiltered[5] = mag[5];
 
-				model(&ekf, accel);
+				model(&ekf, unfiltered);
 
-				ekf_step(&ekf, accel);
+				ekf_step(&ekf, unfiltered);
 
 				filtered[0] = ekf.x[0];
 				filtered[1] = ekf.x[1];
 				filtered[2] = ekf.x[2];
+				filtered[3] = ekf.x[3];
+				filtered[4] = ekf.x[4];
+				filtered[5] = ekf.x[5];
 				// Calculate angles
 				calculateAnglesFromAcceleration(filtered, &modeStatus.current_altitude, &modeStatus.current_azimuth);
 
@@ -708,10 +716,10 @@ void model(ekf_t* ekf, double* z) {
  * @param double accelX, accelY, accelZ: formatted accelerometer data in m/s^2
  * @param double* altitude, azimuth: pointers that point to the variables where the results will be stored
  */
-void calculateAnglesFromAcceleration(const double accel[3], double *altitude, double *azimuth) {
+void calculateAnglesFromAcceleration(const double data[6], double *altitude, double *azimuth) {
 
-    *altitude = asin(accel[0] / sqrt(accel[0] * accel[0] + accel[1] * accel[1] + accel[2] * accel[2])) * (180 / M_PI);
-    *azimuth = 0;
+    *altitude = asin(data[0] / sqrt(data[0] * data[0] + data[1] * data[1] + data[2] * data[2])) * (180 / M_PI);
+    *azimuth = atan2(data[3], data[4]);
 
 
 }
