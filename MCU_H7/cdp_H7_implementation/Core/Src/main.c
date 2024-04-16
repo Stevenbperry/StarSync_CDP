@@ -76,7 +76,11 @@ Telescope_Status modeStatus =  {.currentMode = MODE_STANDBY,
 							    .encoder1 = 0,
 								.encoder2 = 0,
 							    .motor1_en = 0,
-							    .motor2_en = 0}; // initialize the telescope
+							    .motor2_en = 0,
+								.hard_iron = {0, 0, 0},
+								.soft_iron = {{1, 0, 0},
+											  {0, 1, 0},
+											  {0, 0, 1}}}; // initialize the telescope
 
 int increment = 0;
 															// initialize the magnetometer
@@ -224,11 +228,13 @@ int main(void)
 				unfiltered[2] = ((double)accelY / BMA456_FSR * 9.80665) - BMA456_Y_OFFSET;
 
 				// Apply hard and soft iron correction to magnetometer data
-				for (int i = 0; i < 3; i++) {
-				    unfiltered[i + 3] = 0;
-				    for (int j = 0; j < 3; j++) {
-				        unfiltered[i + 3] += modeStatus.soft_iron[i][j] * (mag[j] - modeStatus.hard_iron[j]);
-				    }
+				for (int i = 0; i < 3; i++){
+					mag[i] += modeStatus.hard_iron[i];
+				}
+				for (int i = 0; i < 3; i++){
+					for (int j = 0; j < 3; j++){
+						unfiltered[i+3] = mag[j] * modeStatus.soft_iron[i][j];
+					}
 				}
 				// Calculate angles
 				calculateAnglesFromAcceleration(unfiltered, &angles[0], &angles[1]);

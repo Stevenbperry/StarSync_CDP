@@ -65,15 +65,17 @@ MAGNETO_DrvTypeDef Lis3mdlMagDrv =
 
 void Magnetic_Calibration(UART_HandleTypeDef* huart){
 	int increment = 0;
-	while(increment <= 100){
+	while(increment <= 300){
 		volatile float data[3];
 		char buffer[64];
 		LIS3MDL_MagReadXYZ((float*) &data);
         snprintf(buffer, sizeof(buffer), "%f,%f,%f\r\n", data[0], data[1], data[2]);
         HAL_UART_Transmit(huart, (uint8_t*)buffer, strlen(buffer), 100);
-		HAL_Delay(12);
+		HAL_Delay(100);
 		increment++;
 	}
+	char null_term = '\0';
+    HAL_UART_Transmit(huart, (uint8_t*) &null_term, 1, 100);
 }
 
 void SENSOR_IO_Write(uint8_t Addr, uint8_t Reg, uint8_t Value)
