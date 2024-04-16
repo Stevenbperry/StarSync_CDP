@@ -19,7 +19,7 @@
   * @retval None
   */
 void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTypeDef* huart) {
-	char msg[100];
+	char msg[150];
 	int prev_mode = status->currentMode;
 	if (command[0] == 'P') {
 	    float altitude, azimuth;
@@ -38,7 +38,46 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
 	}else if (command[0] == 'S') {
         status->currentMode = MODE_STANDBY;
     } else if (command[0] == 'C') {
-        status->currentMode = MODE_CALIBRATION;
+    	if (command[1] == 'A'){
+        	// Calibrate accelerometers
+            status->currentMode = MODE_CALIBRATION_A;
+
+    	}else if (command[1] == 'M') {
+    		// Calibrate magnetometers
+            status->currentMode = MODE_CALIBRATION_M;
+
+    	}else if (command[1] == 'F'){
+    		// Update magnetometer constants (F for finished)
+    		float H[3][3];  // Hard iron matrix
+    		float S[3];     // Scale factors
+    	    char* token;
+    	    int index = 0;
+    	    command += 2;
+
+    	    // Get the first token
+    	    token = strtok(command, ",");
+
+    	    // Walk through other tokens
+    	    while (token != NULL) {
+    	        if (index < 9) {  // First 9 tokens are matrix entries
+    	            int row = index / 3;
+    	            int col = index % 3;
+    	            sscanf(token, "%f", &H[row][col]);
+    	        } else if (index < 12) {  // Next 3 tokens are scale factors
+    	            sscanf(token, "%f", &S[index - 9]);
+    	        }
+
+    	        token = strtok(NULL, ",");
+    	        index++;
+    	    }
+    	    memcpy(status->hard_iron, H, sizeof(status->hard_iron));
+    	    memcpy(status->soft_iron, S, sizeof(status->soft_iron));
+	        sprintf(msg, "Updated magnetometer calibration.\r\n");
+	        HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+    	} else{
+	        sprintf(msg, "Invalid calibration request.\r\n");
+	        HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
+    	}
     } else if (command[0] == 'H') {
         status->currentMode = MODE_HEALTH_CHECK;
     } else if (command[0] == 'M') {
@@ -69,24 +108,4 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
 		sprintf(msg, "Mode unchanged.\r\n");
 		HAL_UART_Transmit(huart, (uint8_t*)msg, strlen(msg), 100);
     }
-}
-
-
-/**
-  * @brief If user push putton is detected, go into pairing mode.
-  * @param None
-  * @retval None
-  */
-void HC05_pair(int* pairing_flag, UART_HandleTypeDef huart1){
-	// sets the HC05 into AT mode
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-	const char data1[] = "STM32 in pairing mode!";
-	HAL_UART_Transmit(&huart1, (uint8_t*) data1, strlen(data1), 100);
-	while (*pairing_flag == 0) {
-		// wait
-	}
-	const char data2[] = "STM32 leaving pairing mode!";
-	HAL_UART_Transmit(&huart1, (uint8_t*) data2, strlen(data2), 100);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
-
 }

@@ -50,7 +50,8 @@ extern "C" {
 typedef enum {
     MODE_POINTING,
     MODE_STANDBY,
-    MODE_CALIBRATION,
+    MODE_CALIBRATION_A,
+	MODE_CALIBRATION_M,
     MODE_HEALTH_CHECK
 } SystemMode;
 
@@ -73,6 +74,8 @@ typedef struct {
     int encoder2; // value of AMT103 2
     int motor1_en;	// 1 if motor is enabled, 0 otherwise
     int motor2_en;
+    float hard_iron[3][3];
+    float soft_iron[3];
 } Telescope_Status;
 
 #include "tiny_ekf_struct.h"

@@ -240,13 +240,20 @@ int main(void)
 	    	  	}
 	          break;
 
-	      case MODE_CALIBRATION:
+	      case MODE_CALIBRATION_A:
 	    	  	BMA456_Calibration(hi2c1, &BMA456_X_OFFSET, &BMA456_Y_OFFSET, &BMA456_Z_OFFSET, ekf);
-	    	    Magnetic_Calibration(&huart2);
-				sprintf(debugMsg, "Calibration complete...\r\n");
+				sprintf(debugMsg, "Accelerometer calibration complete...\r\n");
 				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 				modeStatus.currentMode = MODE_STANDBY;
 	          break;
+
+	      case MODE_CALIBRATION_M:
+	    	    Magnetic_Calibration(&huart2);
+				sprintf(debugMsg, "Magnetometer calibration complete...\r\n");
+				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+				modeStatus.currentMode = MODE_STANDBY;
+
+	    	  break;
 
 	      case MODE_HEALTH_CHECK:
 	    	  	if(increment>=10000000){
