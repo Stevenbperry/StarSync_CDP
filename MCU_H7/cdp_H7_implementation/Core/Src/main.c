@@ -214,8 +214,7 @@ int main(void)
 				// Read acceleration data
 				int16_t accelX, accelY, accelZ;
 				float mag[3];
-				uint8_t error_flags = 0;
-				BMA456_ReadErrorFlag(&error_flags, hi2c1);
+				double angles[2];
 				BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
 				LIS3MDL_MagReadXYZ((float*) &mag);
 
@@ -231,17 +230,18 @@ int main(void)
 				        unfiltered[i + 3] += modeStatus.soft_iron[i][j] * (mag[j] - modeStatus.hard_iron[j]);
 				    }
 				}
+				// Calculate angles
+				calculateAnglesFromAcceleration(unfiltered, &angles[0], &angles[1]);
 
-				model(&ekf, unfiltered);
+				model(&ekf, angles);
 
-				ekf_step(&ekf, unfiltered);
+				ekf_step(&ekf, angles);
 
 				for (int i = 0; i < Nsta; i++) {
-				    filtered[i] = ekf.x[i];
+				    angles[i] = ekf.x[i];
 				}
-				// Calculate angles
-				calculateAnglesFromAcceleration(filtered, &modeStatus.current_altitude, &modeStatus.current_azimuth);
-				modeStatus.current_azimuth = modeStatus.current_azimuth + modeStatus.ref_dec;
+				modeStatus.current_altitude = angles[0];
+				modeStatus.current_azimuth = angles[1] + modeStatus.ref_dec;
 
 				// Send angles over UART to debug
 	    	  	if(increment>=1500){
@@ -267,11 +267,31 @@ int main(void)
 	    	  break;
 
 	      case MODE_HEALTH_CHECK:
-	    	  	if(increment>=10000000){
-					sprintf(debugMsg, "Current mode: HEALTH CHECK\r\n");
+	    	    uint8_t error_flags = 0;
+				BMA456_ReadErrorFlag(&error_flags, hi2c1);
+				if (error_flags != 0){
+					sprintf(debugMsg, "ERROR! BMA456 reported error: %i", error_flags);
 					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
-					increment = 0;
-	    	  	}
+				}
+				int16_t iaccelX, iaccelY, iaccelZ, paccelX, paccelY, paccelZ;
+				BMA456_ReadAccelData(&iaccelX, &iaccelY, &iaccelZ, hi2c1);
+				HAL_Delay(50);
+				BMA456_ReadAccelData(&paccelX, &paccelY, &paccelZ, hi2c1);
+				if (iaccelX == paccelX || iaccelY == paccelY || iaccelZ == paccelZ){
+					sprintf(debugMsg, "ERROR! BMA456 not updating values.");
+					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+				}
+				float imag[3], pmag[3];
+				LIS3MDL_MagReadXYZ((float*) &imag);
+				HAL_Delay(50);
+				LIS3MDL_MagReadXYZ((float*) &pmag);
+				for (int i = 0; i < 3; i++){
+					if(imag[i] == pmag[i]){
+						sprintf(debugMsg, "ERROR! LIS3MDL not updating values.");
+						HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					}
+				}
+				modeStatus.currentMode = MODE_STANDBY;
 	          break;
 
 	      default:
@@ -720,7 +740,7 @@ void model(ekf_t* ekf, double* z) {
 void calculateAnglesFromAcceleration(const double data[6], double *altitude, double *azimuth) {
 
     *altitude = asin(data[0] / sqrt(data[0] * data[0] + data[1] * data[1] + data[2] * data[2])) * (180 / M_PI);
-    *azimuth = atan2(data[3], data[4]);
+    *azimuth = atan2(data[3], data[4]) * (180 / M_PI);
 
 
 }

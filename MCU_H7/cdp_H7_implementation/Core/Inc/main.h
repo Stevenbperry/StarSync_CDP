@@ -44,8 +44,8 @@ extern "C" {
 #define AMT103_DPP 0.087890625 // Degrees per pulse
 
 // setup the includes for the EKF
-#define Nsta 6
-#define Mobs 6			// 6 state variables and 6 observations - ax, ay, az, mx, my, mz
+#define Nsta 2
+#define Mobs 2			// 6 state variables and 6 observations - ax, ay, az, mx, my, mz
 
 typedef enum {
     MODE_POINTING,
