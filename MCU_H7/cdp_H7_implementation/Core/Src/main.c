@@ -225,7 +225,7 @@ int main(void)
 
 				// Apply hard and soft iron correction to magnetometer data
 				for (int i = 0; i < 3; i++) {
-				    unfiltered[i + 3] = 0; // Start with zero for magnetometer corrected data
+				    unfiltered[i + 3] = 0;
 				    for (int j = 0; j < 3; j++) {
 				        unfiltered[i + 3] += modeStatus.soft_iron[i][j] * (mag[j] - modeStatus.hard_iron[j]);
 				    }
