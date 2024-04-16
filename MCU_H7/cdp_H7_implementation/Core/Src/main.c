@@ -54,6 +54,9 @@ char command[RX_BUFFER_SIZE];	// rx buffer for interrupt reception
 volatile uint32_t rxIndex = 0;	// variable representing what index the next UART byte goes to
 volatile bool messageReady = false;	// when a message is ready, null terminate it, feed it
 									// to HC05_ProcessCommand();
+float mag[3];
+int16_t accelX, accelY, accelZ;
+double angles[2];
 
 
 double BMA456_X_OFFSET = DEFAULT_BMA456_X_OFFSET;
@@ -169,11 +172,6 @@ int main(void)
 
 	      case MODE_POINTING:
 	    	 volatile float distance_traveled_alt, distance_traveled_az, alt_diff, az_diff;
-	    	 if(modeStatus.motor1_en == 0 || modeStatus.motor2_en == 0){
-	    		 TMC2208_Enable();
-	    		 modeStatus.motor1_en = 1;
-	    		 modeStatus.motor2_en = 1;
-	    	 }
 	    	 distance_traveled_alt = modeStatus.encoder1 * AMT103_DPP;
 	    	 distance_traveled_az = modeStatus.encoder2 * AMT103_DPP;
 	    	 modeStatus.est_altitude = modeStatus.current_altitude + distance_traveled_alt;
@@ -216,9 +214,6 @@ int main(void)
 
 	      case MODE_STANDBY:
 				// Read acceleration data
-				int16_t accelX, accelY, accelZ;
-				float mag[3];
-				double angles[2];
 				BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
 				LIS3MDL_MagReadXYZ((float*) &mag);
 
@@ -229,11 +224,11 @@ int main(void)
 
 				// Apply hard and soft iron correction to magnetometer data
 				for (int i = 0; i < 3; i++){
-					mag[i] += modeStatus.hard_iron[i];
+					mag[i] -= modeStatus.hard_iron[i];
 				}
 				for (int i = 0; i < 3; i++){
 					for (int j = 0; j < 3; j++){
-						unfiltered[i+3] = mag[j] * modeStatus.soft_iron[i][j];
+						unfiltered[i+3] += mag[j] * modeStatus.soft_iron[i][j];
 					}
 				}
 				// Calculate angles
@@ -276,24 +271,24 @@ int main(void)
 	    	    uint8_t error_flags = 0;
 				BMA456_ReadErrorFlag(&error_flags, hi2c1);
 				if (error_flags != 0){
-					sprintf(debugMsg, "ERROR! BMA456 reported error: %i", error_flags);
+					sprintf(debugMsg, "ERROR! BMA456 reported error: %i \r\n", error_flags);
 					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 				}
 				int16_t iaccelX, iaccelY, iaccelZ, paccelX, paccelY, paccelZ;
 				BMA456_ReadAccelData(&iaccelX, &iaccelY, &iaccelZ, hi2c1);
-				HAL_Delay(50);
+				HAL_Delay(2000);
 				BMA456_ReadAccelData(&paccelX, &paccelY, &paccelZ, hi2c1);
 				if (iaccelX == paccelX || iaccelY == paccelY || iaccelZ == paccelZ){
-					sprintf(debugMsg, "ERROR! BMA456 not updating values.");
+					sprintf(debugMsg, "ERROR! BMA456 not updating values.\r\n");
 					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 				}
 				float imag[3], pmag[3];
 				LIS3MDL_MagReadXYZ((float*) &imag);
-				HAL_Delay(50);
+				HAL_Delay(2000);
 				LIS3MDL_MagReadXYZ((float*) &pmag);
 				for (int i = 0; i < 3; i++){
 					if(imag[i] == pmag[i]){
-						sprintf(debugMsg, "ERROR! LIS3MDL not updating values.");
+						sprintf(debugMsg, "ERROR! LIS3MDL not updating values.\r\n");
 						HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 					}
 				}
@@ -303,6 +298,7 @@ int main(void)
 	      default:
 				sprintf(debugMsg, "Failure to change modes.\r\n");
 				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+				modeStatus.currentMode = MODE_STANDBY;
 				increment = 0;
 	          break;
 

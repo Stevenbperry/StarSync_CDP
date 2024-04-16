@@ -106,10 +106,10 @@ typedef struct {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
-void model(ekf_t*, double*);
-void ekf_setup(ekf_t*);
 
 /* USER CODE BEGIN EFP */
+void model(ekf_t*, double*);
+void ekf_setup(ekf_t*);
 
 /* USER CODE END EFP */
 
