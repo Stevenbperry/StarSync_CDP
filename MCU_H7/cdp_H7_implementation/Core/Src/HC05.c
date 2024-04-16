@@ -15,7 +15,7 @@
   * @brief Processes the command received by a Bluetooth transmission.
   * @param char* command: The char array containing the command received
   * @param HC05_ModeStatus* status: The struct containing the mode the scope is in.
-  * @param UART_HandleTypeDef* huart: The uart channel being used - should be huart1.
+  * @param UART_HandleTypeDef* huart: The uart channel being used.
   * @retval None
   */
 void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTypeDef* huart) {
@@ -48,8 +48,8 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
 
     	}else if (command[1] == 'F'){
     		// Update magnetometer constants (F for finished)
-    		float S[3][3];  // Hard iron matrix
-    		float H[3];     // Scale factors
+    		float S[3][3];  // soft iron factors
+    		float H[3];     // hard iron factors
     	    char* token;
     	    int index = 0;
     	    command += 2;
@@ -59,11 +59,11 @@ void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTyp
 
     	    // Walk through other tokens
     	    while (token != NULL) {
-    	        if (index < 9) {  // First 9 tokens are matrix entries
+    	        if (index < 9) {  // First 9 tokens are soft iron factors
     	            int row = index / 3;
     	            int col = index % 3;
     	            sscanf(token, "%f", &S[row][col]);
-    	        } else if (index < 12) {  // Next 3 tokens are scale factors
+    	        } else if (index < 12) {  // Next 3 tokens are hard iron factors
     	            sscanf(token, "%f", &H[index - 9]);
     	        }
 

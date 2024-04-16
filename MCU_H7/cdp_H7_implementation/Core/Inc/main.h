@@ -36,7 +36,7 @@ extern "C" {
 #include "string.h"
 #include "math.h"
 
-#define RX_BUFFER_SIZE 50 // RX buffer can hold up to 13 bytes
+#define RX_BUFFER_SIZE 200 // RX buffer can hold up to 13 bytes
 
 #define ALT_MOTOR 1
 #define AZ_MOTOR 2
