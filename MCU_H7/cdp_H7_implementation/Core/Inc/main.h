@@ -35,6 +35,7 @@ extern "C" {
 #include "stdio.h"
 #include "string.h"
 #include "math.h"
+#include "stdbool.h"
 
 #define RX_BUFFER_SIZE 200 // RX buffer can hold up to 13 bytes
 
@@ -83,7 +84,6 @@ typedef struct {
 
 #include "BMA456.h"
 #include "Steppers.h"
-#include "Quaternion.h"
 #include "HC05.h"
 #include "lis3mdl.h"
 

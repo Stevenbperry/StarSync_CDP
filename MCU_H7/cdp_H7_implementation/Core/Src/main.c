@@ -284,10 +284,8 @@ int main(void)
 				}
 				float imag[3], pmag[3];
 				LIS3MDL_MagReadXYZ((float*) &imag);
-				HAL_Delay(2000);
-				LIS3MDL_MagReadXYZ((float*) &pmag);
 				for (int i = 0; i < 3; i++){
-					if(imag[i] == pmag[i]){
+					if(imag[i] == 0 || imag[i] = 0xFF){
 						sprintf(debugMsg, "ERROR! LIS3MDL not updating values.\r\n");
 						HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
 					}
