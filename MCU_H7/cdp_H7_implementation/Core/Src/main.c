@@ -196,20 +196,20 @@ int main(void)
 	    		 }
 	    		 TMC2208_Step(2);
 	    	 }
-			 if(increment >= 10 ){
+			 if(increment >= 100 ){
 				 // if the telescope isn't moving from the encoder's POV, send debug message and leave pointing
 				 if(distance_traveled_alt == 0 || distance_traveled_az == 0){
 					  sprintf(debugMsg, "ERROR - invalid measured distance traveled from encoders! Exiting pointing mode.\r\n");
-					  HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					  HAL_UART_Transmit_IT(&huart2, (uint8_t*)debugMsg, strlen(debugMsg));
 					  modeStatus.currentMode = MODE_STANDBY;
 					  increment = 0;
 				 } else{	// regular reports of how far the scope has traveled
 					  sprintf(debugMsg, "Distance traveled - Altitude: %f | Azimuth: %f\r\n", distance_traveled_alt, distance_traveled_az);
-					  HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					  HAL_UART_Transmit_IT(&huart2, (uint8_t*)debugMsg, strlen(debugMsg));
 					 increment = 0;
 				 }
-				 increment = 0;
 	    	  	}
+			  increment++;
 	          break;
 
 	      case MODE_STANDBY:
@@ -245,9 +245,9 @@ int main(void)
 				modeStatus.current_azimuth = angles[1] + modeStatus.ref_dec;
 
 				// Send angles over UART to debug
-	    	  	if(increment>=1500){
+	    	  	if(increment>=4500){
 					sprintf(debugMsg, "Altitude: %f, Azimuth: %f\r\n", modeStatus.current_altitude, modeStatus.current_azimuth);
-					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					HAL_UART_Transmit_IT(&huart2, (uint8_t*)debugMsg, strlen(debugMsg));
 					increment = 0;
 	    	  	}
 	          break;
@@ -255,14 +255,14 @@ int main(void)
 	      case MODE_CALIBRATION_A:
 	    	  	BMA456_Calibration(hi2c1, &BMA456_X_OFFSET, &BMA456_Y_OFFSET, &BMA456_Z_OFFSET, ekf);
 				sprintf(debugMsg, "Accelerometer calibration complete...\r\n");
-				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+				HAL_UART_Transmit_IT(&huart2, (uint8_t*)debugMsg, strlen(debugMsg));
 				modeStatus.currentMode = MODE_STANDBY;
 	          break;
 
 	      case MODE_CALIBRATION_M:
 	    	    Magnetic_Calibration(&huart2);
 				sprintf(debugMsg, "Magnetometer calibration complete...\r\n");
-				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+				HAL_UART_Transmit_IT(&huart2, (uint8_t*)debugMsg, strlen(debugMsg));
 				modeStatus.currentMode = MODE_STANDBY;
 
 	    	  break;
@@ -272,7 +272,7 @@ int main(void)
 				BMA456_ReadErrorFlag(&error_flags, hi2c1);
 				if (error_flags != 0){
 					sprintf(debugMsg, "ERROR! BMA456 reported error: %i \r\n", error_flags);
-					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					HAL_UART_Transmit_IT(&huart2, (uint8_t*)debugMsg, strlen(debugMsg));
 				}
 				int16_t iaccelX, iaccelY, iaccelZ, paccelX, paccelY, paccelZ;
 				BMA456_ReadAccelData(&iaccelX, &iaccelY, &iaccelZ, hi2c1);
@@ -280,14 +280,14 @@ int main(void)
 				BMA456_ReadAccelData(&paccelX, &paccelY, &paccelZ, hi2c1);
 				if (iaccelX == paccelX || iaccelY == paccelY || iaccelZ == paccelZ){
 					sprintf(debugMsg, "ERROR! BMA456 not updating values.\r\n");
-					HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+					HAL_UART_Transmit_IT(&huart2, (uint8_t*)debugMsg, strlen(debugMsg));
 				}
-				float imag[3], pmag[3];
+				float imag[3];
 				LIS3MDL_MagReadXYZ((float*) &imag);
 				for (int i = 0; i < 3; i++){
-					if(imag[i] == 0 || imag[i] = 0xFF){
+					if(imag[i] == 0 || imag[i] == 0xFF){
 						sprintf(debugMsg, "ERROR! LIS3MDL not updating values.\r\n");
-						HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+						HAL_UART_Transmit_IT(&huart2, (uint8_t*)debugMsg, strlen(debugMsg));
 					}
 				}
 				modeStatus.currentMode = MODE_STANDBY;
@@ -295,7 +295,7 @@ int main(void)
 
 	      default:
 				sprintf(debugMsg, "Failure to change modes.\r\n");
-				HAL_UART_Transmit(&huart2, (uint8_t*)debugMsg, strlen(debugMsg), 100);
+				HAL_UART_Transmit_IT(&huart2, (uint8_t*)debugMsg, strlen(debugMsg));
 				modeStatus.currentMode = MODE_STANDBY;
 				increment = 0;
 	          break;
@@ -763,6 +763,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	HAL_UART_Receive_IT(huart, (uint8_t*)&command[rxIndex], 1);
 
 }
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART2) {
+        // Transmission completed, do something, e.g., set a flag
+    }
+}
+
 /* USER CODE END 4 */
 
 /**

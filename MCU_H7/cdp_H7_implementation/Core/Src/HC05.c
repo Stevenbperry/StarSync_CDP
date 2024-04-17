@@ -10,7 +10,7 @@
 
 #include "main.h"
 
-
+extern int increment;
 /**
   * @brief Processes the command received by a Bluetooth transmission.
   * @param char* command: The char array containing the command received
@@ -20,6 +20,7 @@
   */
 void HC05_ProcessCommand(char* command, Telescope_Status* status, UART_HandleTypeDef* huart) {
 	char msg[150];
+	increment = 0;
 	int prev_mode = status->currentMode;
 	if (command[0] == 'P') {
 	    float altitude, azimuth;
