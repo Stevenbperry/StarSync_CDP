@@ -222,8 +222,8 @@ int main(void)
 
 				// Convert to double for calculation (assuming BMA456 scale is set for +-2g and 12-bit resolution)
 				unfiltered[0] = ((double)accelX / BMA456_FSR * 9.80665) - BMA456_X_OFFSET;
-				unfiltered[1] = -1 * (((double)accelZ / BMA456_FSR * 9.80665) - BMA456_Z_OFFSET);
-				unfiltered[2] = ((double)accelY / BMA456_FSR * 9.80665) - BMA456_Y_OFFSET;
+				unfiltered[1] = ((double)accelY / BMA456_FSR * 9.80665) - BMA456_Y_OFFSET;
+				unfiltered[2] = ((double)accelZ / BMA456_FSR * 9.80665) - BMA456_Z_OFFSET;
 
 				// Apply hard and soft iron correction to magnetometer data
 				for (int i = 0; i < 3; i++){
