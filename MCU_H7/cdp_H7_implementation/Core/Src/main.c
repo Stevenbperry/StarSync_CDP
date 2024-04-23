@@ -216,6 +216,8 @@ int main(void)
 	          break;
 
 	      case MODE_STANDBY:
+			    modeStatus.encoder1 = 0;
+                modeStatus.encoder2 = 0;
 				// Read acceleration data
 				BMA456_ReadAccelData(&accelX, &accelY, &accelZ, hi2c1);
 				LIS3MDL_MagReadXYZ((float*) &mag);
