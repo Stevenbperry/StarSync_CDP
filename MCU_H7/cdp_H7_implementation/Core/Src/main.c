@@ -106,6 +106,9 @@ static void MX_I2C1_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void calculateAnglesFromAcceleration(const double data[6], double *altitude, double *azimuth);
+float vector_dot(const float[3], const float[3]);
+void vector_normalize(float[3]);
+void vector_cross(const float[3], const float[3], float[3]);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -739,11 +742,70 @@ void model(ekf_t* ekf, double* z) {
  */
 void calculateAnglesFromAcceleration(const double data[6], double *altitude, double *azimuth) {
 
+
+    // Compute the East and North vectors
+    float E[3], N[3], mag[3], accel[3];
+    for (int i = 0;i<3;i++){
+    	accel[i] = data[i];
+    	mag[i+3] = data[i+3];
+    }
+    vector_cross(mag, accel, E); // Cross product of mag and accel vectors
+    vector_normalize(E);                        // Normalize the East vector
+
+    vector_cross(accel, E, N);             // Cross product of accel and East vectors
+    vector_normalize(N);                        // Normalize the North vector
+
+    // Compute the heading
+    // Assuming 'from' vector is the front of the device and it's [1, 0, 0]
+    float from[3] = {1, 0, 0};
+    float heading = atan2(vector_dot(E, from), vector_dot(N, from)) * 180 / M_PI;
+    if (heading < 0) heading += 360;
+
+    *azimuth = heading;
+
     *altitude = asin(data[0] / sqrt(data[0] * data[0] + data[1] * data[1] + data[2] * data[2])) * (180 / M_PI);
-    *azimuth = atan2(data[3], data[4]) * (180 / M_PI);
 
 
 }
+/**
+ * @brief Computes the cross product of two 3D vectors.
+ * @param a The first input vector.
+ * @param b The second input vector.
+ * @param result The output vector that is the cross product of a and b.
+ */
+void vector_cross(const float a[3], const float b[3], float result[3]) {
+    result[0] = a[1] * b[2] - a[2] * b[1];
+    result[1] = a[2] * b[0] - a[0] * b[2];
+    result[2] = a[0] * b[1] - a[1] * b[0];
+}
+
+/**
+ * @brief Normalizes a 3D vector to unit length.
+ * @param v The input vector to normalize.
+ */
+void vector_normalize(float v[3]) {
+    // Calculate the magnitude of the vector
+    float magnitude = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+
+    // Avoid division by zero
+    if (magnitude > 0.0f) {
+        // Normalize the vector by its magnitude
+        v[0] /= magnitude;
+        v[1] /= magnitude;
+        v[2] /= magnitude;
+    }
+}
+
+/**
+ * @brief Computes the dot product of two 3D vectors.
+ * @param a The first input vector.
+ * @param b The second input vector.
+ * @return The scalar dot product of vectors a and b.
+ */
+float vector_dot(const float a[3], const float b[3]) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
 /**
  * @brief Retrieves data that was recorded from the interrupt
  */

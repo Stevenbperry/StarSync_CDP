@@ -54,15 +54,13 @@ void TMC2208_Backward(int motor){
 void TMC2208_Step(int motor){
 	if(motor == 1){
 		HAL_GPIO_WritePin(GPIOD, TMC_2208_STEP_1_Pin, GPIO_PIN_SET);
-		HAL_Delay(1);
 		HAL_GPIO_WritePin(GPIOD, TMC_2208_STEP_1_Pin, GPIO_PIN_RESET);
-		HAL_Delay(1);
+		HAL_Delay(10);
 	}
 	if(motor == 2){
 		HAL_GPIO_WritePin(GPIOD, TMC_2208_STEP_2_Pin, GPIO_PIN_SET);
-		HAL_Delay(1);
 		HAL_GPIO_WritePin(GPIOD, TMC_2208_STEP_2_Pin, GPIO_PIN_RESET);
-		HAL_Delay(1);
+		HAL_Delay(10);
 	}
 }
 /*
